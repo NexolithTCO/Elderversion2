@@ -1,0 +1,165 @@
+package com.example.elderhelpprototypev01.overlay
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.graphics.PixelFormat
+import android.os.Build
+import android.os.IBinder
+import android.view.Gravity
+import android.view.WindowManager
+import androidx.core.app.NotificationCompat
+import com.example.elderhelpprototypev01.MainActivity
+import com.example.elderhelpprototypev01.R
+
+/**
+ * SahaayOverlayService
+ *
+ * A foreground service that manages the floating Sahaay overlay window.
+ * It runs persistently when enabled, keeping the floating button visible
+ * above all other applications.
+ *
+ * Lifecycle:
+ *  - Started by MainActivity when user enables overlay & has overlay permission
+ *  - Stops itself when the user disables the overlay from the notification action
+ *    or from the app settings card
+ */
+class SahaayOverlayService : Service() {
+
+    companion object {
+        private const val CHANNEL_ID = "sahaay_overlay_channel"
+        private const val NOTIFICATION_ID = 1001
+        const val ACTION_STOP_OVERLAY = "com.example.elderhelpprototypev01.STOP_OVERLAY"
+
+        fun startIntent(context: Context): Intent =
+            Intent(context, SahaayOverlayService::class.java)
+
+        fun stopIntent(context: Context): Intent =
+            Intent(context, SahaayOverlayService::class.java).apply {
+                action = ACTION_STOP_OVERLAY
+            }
+    }
+
+    private var windowManager: WindowManager? = null
+    private var overlayView: SahaayOverlayView? = null
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        createNotificationChannel()
+        startForeground(NOTIFICATION_ID, buildNotification())
+        showOverlay()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP_OVERLAY) {
+            SahaayPreferences.setOverlayEnabled(this, false)
+            stopSelf()
+        }
+        return START_STICKY
+    }
+
+    override fun onDestroy() {
+        removeOverlay()
+        super.onDestroy()
+    }
+
+    // ------------------------------------------------------------------
+    // Overlay Window
+    // ------------------------------------------------------------------
+
+    private fun showOverlay() {
+        if (overlayView != null) return
+
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        val density = resources.displayMetrics.density
+        val totalPx = (SahaayOverlayView.TOTAL_VIEW_SIZE_DP * density).toInt()
+
+        val params = WindowManager.LayoutParams(
+            totalPx,
+            totalPx,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = (resources.displayMetrics.widthPixels - totalPx - 16).coerceAtLeast(0)
+            y = (resources.displayMetrics.heightPixels / 3)
+        }
+
+        overlayView = SahaayOverlayView(this, windowManager!!, params)
+        windowManager!!.addView(overlayView, params)
+    }
+
+    private fun removeOverlay() {
+        try {
+            overlayView?.let { view ->
+                view.collapseMenu()
+                windowManager?.removeView(view)
+            }
+        } catch (e: Exception) {
+            // View may have already been removed
+        }
+        overlayView = null
+    }
+
+    // ------------------------------------------------------------------
+    // Foreground Notification
+    // ------------------------------------------------------------------
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Sahaay Assistant",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Sahaay floating assistant overlay"
+                setShowBadge(false)
+            }
+            val nm = getSystemService(NotificationManager::class.java)
+            nm.createNotificationChannel(channel)
+        }
+    }
+
+    private fun buildNotification(): Notification {
+        // Tap notification → open main app
+        val openAppPending = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        // Action: stop the overlay
+        val stopPending = PendingIntent.getService(
+            this,
+            1,
+            stopIntent(this),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_overlay_mic)
+            .setContentTitle("Sahaay is active")
+            .setContentText("Floating assistant is running. Tap to open app.")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(openAppPending)
+            .addAction(R.drawable.ic_overlay_mic, "Turn off", stopPending)
+            .setOngoing(true)
+            .build()
+    }
+}
