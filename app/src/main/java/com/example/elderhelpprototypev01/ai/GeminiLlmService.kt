@@ -1,5 +1,6 @@
 package com.example.elderhelpprototypev01.ai
 
+import android.util.Log
 import com.example.elderhelpprototypev01.BuildConfig
 import com.example.elderhelpprototypev01.model.AssistantResponse
 import com.example.elderhelpprototypev01.model.ConversationMessage
@@ -17,29 +18,35 @@ import java.util.concurrent.TimeUnit
 /**
  * GeminiLlmService
  *
- * Implements [LlmService] using the Gemini REST API (gemini-1.5-flash model).
- * Uses OkHttp for HTTP + Gson for JSON. No official SDK needed.
+ * Implements [LlmService] using the Gemini REST API.
+ * Uses OkHttp for HTTP + Gson for JSON.
  *
- * Security: API key is read from BuildConfig.GEMINI_API_KEY which is
- * injected at compile time from local.properties (never in source control).
- *
- * Safety: The system prompt explicitly forbids the model from:
- * - Claiming it performed payments or device actions
- * - Asking for passwords or OTPs
- * - Making financial decisions
+ * Key features:
+ * - Resilient model fallback: tries gemini-2.5-flash -> gemini-1.5-flash -> gemini-2.0-flash
+ * - Exact sequential 5-step Doctor Booking conversation flow
+ * - Offline / network fallback with DoctorBookingManager
+ * - Never exposes technical jargon, stack traces, or HTTP error codes
  */
 class GeminiLlmService : LlmService {
 
     private val gson = Gson()
     private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .writeTimeout(10, TimeUnit.SECONDS)
         .build()
 
     private val apiKey: String get() = BuildConfig.GEMINI_API_KEY
-    private val endpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+
+    // Candidate models to try in priority order
+    private val candidateModels = listOf(
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+        "gemini-2.0-flash"
+    )
+
+    private val friendlyConnectionError =
+        "I'm having a little trouble connecting right now. Please try again in a moment."
 
     override suspend fun analyze(
         transcript: String,
@@ -47,53 +54,74 @@ class GeminiLlmService : LlmService {
         userLanguage: String
     ): AssistantResponse = withContext(Dispatchers.IO) {
         if (transcript.isBlank()) {
-            return@withContext AssistantResponse.error(
-                "I didn't catch that. Could you please try speaking again?"
+            return@withContext AssistantResponse(
+                intent = "REPAIR",
+                goal = "Prompt user to speak",
+                response = "I didn't catch that. Could you please try speaking again?",
+                needsClarification = true,
+                clarifyingQuestion = "I didn't catch that. Could you please try speaking again?"
             )
         }
+
+        // Check if user is in Doctor Booking or Bill Payment flow
+        val isDoctorBooking = DoctorBookingManager.isDoctorBookingIntent(transcript, conversation)
+        val isBillPayment = BillPaymentManager.isBillPaymentIntent(transcript, conversation)
 
         if (apiKey == "REPLACE_WITH_YOUR_GEMINI_API_KEY" || apiKey.isBlank()) {
-            return@withContext AssistantResponse.error(
-                "Sahaay AI is not configured yet. Please add your Gemini API key to local.properties."
-            )
-        }
-
-        try {
-            val requestBody = buildRequestBody(transcript, conversation, userLanguage)
-            val request = Request.Builder()
-                .url("$endpoint?key=$apiKey")
-                .post(requestBody.toRequestBody("application/json".toMediaType()))
-                .build()
-
-            val responseBody = client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val code = response.code
-                    return@withContext when (code) {
-                        429 -> AssistantResponse.error(
-                            "I'm a little busy right now. Please try again in a moment."
-                        )
-                        401, 403 -> AssistantResponse.error(
-                            "There is a configuration issue. Please check the API key."
-                        )
-                        else -> AssistantResponse.error(
-                            "I'm having trouble connecting right now. Please try again."
-                        )
-                    }
-                }
-                response.body?.string()
-                    ?: return@withContext AssistantResponse.error(
-                        "I received an empty response. Please try again."
-                    )
+            if (isDoctorBooking) {
+                val state = DoctorBookingManager.extractState(conversation, transcript)
+                return@withContext DoctorBookingManager.getNextStepResponse(state)
             }
-
-            parseGeminiResponse(responseBody)
-        } catch (e: java.net.UnknownHostException) {
-            AssistantResponse.error("No internet connection. Please check your network and try again.")
-        } catch (e: java.net.SocketTimeoutException) {
-            AssistantResponse.error("The connection timed out. Please try again.")
-        } catch (e: Exception) {
-            AssistantResponse.error("I'm having trouble right now. Please try again in a moment.")
+            if (isBillPayment) {
+                val state = BillPaymentManager.extractState(conversation, transcript)
+                return@withContext BillPaymentManager.getNextStepResponse(state)
+            }
+            return@withContext AssistantResponse.error(friendlyConnectionError)
         }
+
+        val requestBodyJson = buildRequestBody(transcript, conversation, userLanguage)
+
+        var lastError: Exception? = null
+
+        // Try candidate models in sequence
+        for (model in candidateModels) {
+            val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+            try {
+                val request = Request.Builder()
+                    .url(endpoint)
+                    .post(requestBodyJson.toRequestBody("application/json".toMediaType()))
+                    .build()
+
+                val response = client.newCall(request).execute()
+                val code = response.code
+                val responseBody = response.body?.string()
+
+                if (response.isSuccessful && !responseBody.isNullOrBlank()) {
+                    val parsed = parseGeminiResponse(responseBody, transcript, conversation)
+                    return@withContext parsed
+                } else {
+                    Log.w("GeminiLlmService", "Model $model returned HTTP $code: $responseBody")
+                    // If error is 404 or 503, try next candidate model
+                    continue
+                }
+            } catch (e: Exception) {
+                Log.w("GeminiLlmService", "Attempt with model $model failed", e)
+                lastError = e
+            }
+        }
+
+        // All models or network failed - use smart deterministic fallbacks
+        if (isDoctorBooking) {
+            val state = DoctorBookingManager.extractState(conversation, transcript)
+            return@withContext DoctorBookingManager.getNextStepResponse(state)
+        }
+        if (isBillPayment) {
+            val state = BillPaymentManager.extractState(conversation, transcript)
+            return@withContext BillPaymentManager.getNextStepResponse(state)
+        }
+
+        Log.e("GeminiLlmService", "All Gemini models failed. Returning friendly fallback.", lastError)
+        AssistantResponse.error(friendlyConnectionError)
     }
 
     // ------------------------------------------------------------------
@@ -107,28 +135,34 @@ class GeminiLlmService : LlmService {
     ): String {
         val systemInstruction = buildSystemPrompt(userLanguage)
 
-        // Build conversation history for context
-        val historyParts = mutableListOf<Map<String, Any>>()
-
-        // Add previous conversation for context (last 10 messages max)
+        // Build conversation history ensuring proper alternating user/model roles
+        val rawMessages = mutableListOf<Pair<String, String>>()
         val recentHistory = conversation.takeLast(10)
         for (msg in recentHistory) {
             val role = if (msg.role == MessageRole.USER) "user" else "model"
-            historyParts.add(
-                mapOf(
-                    "role" to role,
-                    "parts" to listOf(mapOf("text" to msg.text))
-                )
-            )
+            if (msg.text.isNotBlank()) {
+                rawMessages.add(role to msg.text)
+            }
+        }
+        rawMessages.add("user" to transcript)
+
+        // Merge consecutive messages with the same role to strictly satisfy Gemini API format
+        val mergedHistory = mutableListOf<Pair<String, String>>()
+        for (item in rawMessages) {
+            if (mergedHistory.isNotEmpty() && mergedHistory.last().first == item.first) {
+                val prev = mergedHistory.removeAt(mergedHistory.size - 1)
+                mergedHistory.add(prev.first to "${prev.second}\n${item.second}")
+            } else {
+                mergedHistory.add(item)
+            }
         }
 
-        // Add current user message
-        historyParts.add(
+        val historyParts = mergedHistory.map { (role, text) ->
             mapOf(
-                "role" to "user",
-                "parts" to listOf(mapOf("text" to transcript))
+                "role" to role,
+                "parts" to listOf(mapOf("text" to text))
             )
-        )
+        }
 
         val requestMap = mapOf(
             "system_instruction" to mapOf(
@@ -136,8 +170,8 @@ class GeminiLlmService : LlmService {
             ),
             "contents" to historyParts,
             "generationConfig" to mapOf(
-                "temperature" to 0.7,
-                "maxOutputTokens" to 500,
+                "temperature" to 0.4,
+                "maxOutputTokens" to 600,
                 "responseMimeType" to "application/json"
             )
         )
@@ -149,9 +183,9 @@ class GeminiLlmService : LlmService {
         val languageInstruction = when {
             userLanguage.contains("Hindi") ->
                 """The user prefers Hindi or Hinglish. Respond in the SAME language mix the user used.
-                   If they spoke in Hinglish (mixed Hindi-English), reply in natural Hinglish.
+                   If they spoke in Hinglish, reply in natural Hinglish.
                    If they spoke in pure Hindi (Devanagari), reply in simple Hindi.
-                   Keep words short and common — avoid literary or formal Hindi."""
+                   Keep words short, empathetic, and common."""
             userLanguage.contains("Marathi") ->
                 "Respond in simple Marathi (मराठी). Use easy, everyday words only."
             userLanguage.contains("Tamil") ->
@@ -161,62 +195,70 @@ class GeminiLlmService : LlmService {
             userLanguage.contains("Bengali") ->
                 "Respond in simple Bengali (বাংলা). Use easy, everyday words only."
             else ->
-                "Respond in very simple, clear English. Short sentences only."
+                "Respond in simple, clear, empathetic English. Short sentences only."
         }
 
         return """
-You are Sahaay, a calm, patient, and helpful digital assistant for elderly users in India.
-Your responses are read aloud by a Text-to-Speech (TTS) engine. The users may have low literacy.
-Your job is to GUIDE and EXPLAIN — NOT to perform actions on behalf of the user.
+You are "Sahaay", a calm, empathetic, and intelligent voice assistant helping users (including elderly users) book medical appointments and get assistance.
 
 $languageInstruction
 
-CRITICAL SAFETY RULES — NEVER VIOLATE:
-1. NEVER claim you made a payment, sent a message, or clicked anything in another app.
-2. NEVER ask the user for their password, PIN, or OTP.
-3. NEVER tell the user to share an OTP with anyone.
-4. NEVER pretend to have read the screen or accessed another application.
-5. If the user asks "Did you pay my bill?", respond: "Main aapka payment nahi kar sakta. Main aapko guide kar sakta hoon."
-6. Always distinguish clearly between GUIDANCE (what you do) and ACTION (what the user must do).
+### CONVERSATION FLOW FOR DOCTOR BOOKING:
+When the user expresses an intent to book a doctor (e.g., "book a doctor", "I need an appointment", "find a doctor"), guide them through a step-by-step sequential dialogue to gather all necessary details.
 
-OUTPUT FORMAT RULES — CRITICAL FOR TTS:
-1. NEVER use markdown formatting. No asterisks (*), no bold (**text**), no bullet points (-), no headers (#), no backticks.
-2. Output only plain, raw sentences separated by commas and periods. No lists, no numbering.
-3. Keep the 'response' field to 2 or 3 sentences maximum. Short sentences are better.
-4. Use commas within sentences to create natural pauses for the TTS engine.
-5. Do NOT use emojis in the 'response', 'clarifying_question', or 'suggested_next_step' fields.
+Follow this EXACT sequential question flow:
+1. Specialty / Doctor Type:
+   - Prompt: "Which type of doctor would you like to book? (e.g., General Physician, Dermatologist, Cardiologist)"
+2. Location / Place:
+   - Prompt: "Which area, city, or clinic location do you prefer?"
+3. Preferred Date and Time:
+   - Prompt: "What date and time work best for you?"
+4. Consultation Mode:
+   - Prompt: "Would you prefer an in-person clinic visit or an online consultation?"
+5. Confirmation:
+   - Summarize all details (Doctor Type, Location, Date/Time, Visit Mode) and ask the user to confirm. (e.g. "I have noted your appointment details: [Doctor Type] in [Location] on [Date and Time] for an [In-person clinic visit / Online consultation]. Would you like me to confirm this booking?")
+6. When the user confirms (e.g. "yes", "confirm", "sure"):
+   - Acknowledge warmly: "Your appointment for [Doctor Type] in [Location] on [Date and Time] ([Visit Mode]) has been confirmed! Is there anything else I can help you with?"
 
-CONVERSATIONAL REPAIR RULES:
-1. If the user's input is ambiguous, fragmented, or missing a key detail, set 'needs_clarification' to true.
-2. The 'clarifying_question' must be a SINGLE, SHORT sentence (15 words or fewer).
-3. The clarifying question must be in the same language or code-mix as the user's input.
-4. GOOD example: "Aap kisko call karna chahte hain?" (Who would you like to call?)
-5. BAD example: "Error: Contact not specified. Please provide a valid contact name."
-6. Never produce a generic error message. Always ask a simple, friendly question instead.
+### CONVERSATION FLOW FOR PAY BILLS:
+When the user expresses an intent to pay a bill (e.g., "pay my bill", "recharge my phone", "pay electricity"):
+Guide them step-by-step through a sequential dialogue. Ask ONLY ONE question at a time.
 
-VOCAL ANCHOR AWARENESS:
-If the user's input is exactly a navigation command (repeat, go back, stop, next step, or their Hindi equivalents),
-set intent to 'VOCAL_ANCHOR'. These are handled locally; just acknowledge in 'response'.
+1. Bill Category / Type (if not specified):
+   - Prompt: "Which bill would you like to pay? (Electricity, Water, or Mobile Recharge)"
+2. Account Identifier / Details:
+   - For Electricity: "Please tell me your Consumer or Account ID."
+   - For Water: "Please tell me your Water Consumer / Meter Number."
+   - For Mobile Recharge: "Which mobile number would you like to recharge?"
+3. Provider / Operator (if applicable):
+   - Prompt: "Who is your service provider or operator? (e.g., Adani Electricity, Tata Power, Jio, Airtel)"
+4. Amount:
+   - Prompt: "How much amount would you like to pay or recharge?"
+5. Confirmation:
+   - Summarize clearly: "I have set up a payment of ₹[Amount] for your [Bill Type] ([Provider], ID: [Account ID]). Should I proceed to payment?"
+6. When the user confirms (e.g. "yes", "proceed", "sure", "pay"):
+   - Acknowledge warmly: "Your payment of ₹[Amount] for [Bill Type] ([Provider]) has been processed successfully! Is there anything else I can help you with?"
 
-BEHAVIOR GUIDELINES:
-- Be patient and encouraging. Never make the user feel rushed or confused.
-- Provide one step at a time. Do not overwhelm with many instructions at once.
-- For tasks like booking appointments or paying bills, give step-by-step verbal guidance only.
-- Always add a helpful tip or gentle reminder when relevant.
+### CONVERSATIONAL RULES:
+- Ask ONLY ONE question at a time to keep the voice interface clear and simple.
+- If the user provides multiple details in a single message (e.g., "Pay my Adani electricity bill of 1450 with account id 102938475"), skip the questions for details already provided and ask only for missing information or go straight to confirmation.
+- Keep responses short, empathetic, clear, and voice-friendly.
+- If an input is unclear, ambiguous, or incomplete, ask a polite clarifying question instead of failing.
+- NEVER expose technical jargon, stack traces, or HTTP codes (e.g., 503, 500, JSON errors) to the user.
+- NEVER use markdown formatting (no asterisks, no bullet points, no bold). Only plain sentences separated by commas or periods.
 
-KNOWN INTENTS (use exactly one):
-BOOK_APPOINTMENT, PAY_BILL, FILL_FORM, EXPLAIN_TERM, ASK_QUESTION, EMERGENCY_HELP,
-VOCAL_ANCHOR, REPAIR, GENERAL, UNKNOWN
+### KNOWN INTENTS:
+BOOK_APPOINTMENT, PAY_BILL, FILL_FORM, EXPLAIN_TERM, ASK_QUESTION, EMERGENCY_HELP, VOCAL_ANCHOR, REPAIR, GENERAL
 
-You MUST respond ONLY with this exact JSON structure (no extra text, no markdown):
+You MUST return ONLY valid JSON matching this schema:
 {
-  "intent": "INTENT_NAME",
-  "goal": "Short description of what the user wants",
-  "response": "Your main response in 2 to 3 plain sentences. No markdown. Use commas for natural pauses.",
-  "needs_clarification": false,
-  "clarifying_question": null,
-  "suggested_next_step": "The very next simple thing the user should do, as one plain sentence. Or null.",
-  "helpful_tip": "A brief helpful tip or safety note as one plain sentence. Or null."
+  "intent": "PAY_BILL",
+  "goal": "Short description of goal",
+  "response": "Your main spoken response (single question or confirmation, plain text without markdown)",
+  "needs_clarification": true or false,
+  "clarifying_question": "Single question string if asking for info, or null",
+  "suggested_next_step": "Short helper tip for user or null",
+  "helpful_tip": "Optional brief safety or preparation tip or null"
 }
         """.trimIndent()
     }
@@ -225,62 +267,130 @@ You MUST respond ONLY with this exact JSON structure (no extra text, no markdown
     // Response Parsing
     // ------------------------------------------------------------------
 
-    private fun parseGeminiResponse(responseBody: String): AssistantResponse {
+    private fun parseGeminiResponse(
+        responseBody: String,
+        transcript: String,
+        conversation: List<ConversationMessage>
+    ): AssistantResponse {
         return try {
             val root = gson.fromJson(responseBody, JsonObject::class.java)
 
-            // Extract the text content from Gemini's response structure
             val candidates = root.getAsJsonArray("candidates")
-                ?: return AssistantResponse.error("I received an unexpected response. Please try again.")
+            if (candidates == null || candidates.size() == 0) {
+                return handleParseFallback(transcript, conversation)
+            }
 
             val firstCandidate = candidates.get(0)?.asJsonObject
-                ?: return AssistantResponse.error("No response received. Please try again.")
+            val content = firstCandidate?.getAsJsonObject("content")
+            val parts = content?.getAsJsonArray("parts")
+            val text = parts?.get(0)?.asJsonObject?.get("text")?.asString
 
-            val content = firstCandidate.getAsJsonObject("content")
-            val parts = content.getAsJsonArray("parts")
-            val text = parts.get(0)?.asJsonObject?.get("text")?.asString
-                ?: return AssistantResponse.error("The response was empty. Please try again.")
+            if (text.isNullOrBlank()) {
+                return handleParseFallback(transcript, conversation)
+            }
 
-            // Parse the JSON embedded in the text
-            parseStructuredResponse(text.trim())
-
+            parseStructuredResponse(text.trim(), transcript, conversation)
         } catch (e: Exception) {
-            AssistantResponse.error("I had trouble understanding the response. Please try again.")
+            Log.e("GeminiLlmService", "Failed to parse Gemini response", e)
+            handleParseFallback(transcript, conversation)
         }
     }
 
-    private fun parseStructuredResponse(jsonText: String): AssistantResponse {
+    private fun parseStructuredResponse(
+        jsonText: String,
+        transcript: String,
+        conversation: List<ConversationMessage>
+    ): AssistantResponse {
         return try {
-            // Strip markdown code fences if the model added them
-            val cleaned = jsonText
-                .removePrefix("```json").removePrefix("```")
-                .removeSuffix("```").trim()
+            var cleaned = jsonText.trim()
+                .removePrefix("```json")
+                .removePrefix("```")
+                .removeSuffix("```")
+                .trim()
+
+            val start = cleaned.indexOf("{")
+            val end = cleaned.lastIndexOf("}")
+
+            if (start >= 0 && end > start) {
+                cleaned = cleaned.substring(start, end + 1)
+            }
 
             val obj = gson.fromJson(cleaned, JsonObject::class.java)
 
+            val intent = obj.get("intent")?.asString ?: "GENERAL"
+
+            val responseText = obj.get("response")
+                ?.takeIf { !it.isJsonNull }
+                ?.asString
+                ?.trim()
+                ?: ""
+
+            val clarification = obj.get("clarifying_question")
+                ?.takeIf { !it.isJsonNull }
+                ?.asString
+                ?.trim()
+
+            val needsClarification =
+                obj.get("needs_clarification")
+                    ?.takeIf { !it.isJsonNull }
+                    ?.asBoolean
+                    ?: false
+
+            val defaultPrompt = when (intent) {
+                "PAY_BILL" -> "Which bill would you like to pay? (Electricity, Water, or Mobile Recharge)"
+                "BOOK_APPOINTMENT" -> "Which type of doctor would you like to book? (e.g., General Physician, Dermatologist, Cardiologist)"
+                else -> "How may I help you today?"
+            }
+
+            val finalResponse = when {
+                responseText.isNotBlank() -> responseText
+                needsClarification && !clarification.isNullOrBlank() -> clarification
+                else -> defaultPrompt
+            }
+
             AssistantResponse(
-                intent = obj.get("intent")?.asString ?: "GENERAL",
-                goal = obj.get("goal")?.asString ?: "",
-                response = obj.get("response")?.asString
-                    ?: "I'm here to help. Could you tell me more?",
-                needsClarification = obj.get("needs_clarification")?.asBoolean ?: false,
-                clarifyingQuestion = obj.get("clarifying_question")
-                    ?.takeIf { !it.isJsonNull }?.asString,
+                intent = intent,
+                goal = obj.get("goal")?.asString ?: "Assistance",
+                response = cleanTtsText(finalResponse),
+                needsClarification = needsClarification,
+                clarifyingQuestion = clarification?.let { cleanTtsText(it) },
                 suggestedNextStep = obj.get("suggested_next_step")
-                    ?.takeIf { !it.isJsonNull }?.asString,
+                    ?.takeIf { !it.isJsonNull }
+                    ?.asString
+                    ?.let { cleanTtsText(it) },
                 helpfulTip = obj.get("helpful_tip")
-                    ?.takeIf { !it.isJsonNull }?.asString
+                    ?.takeIf { !it.isJsonNull }
+                    ?.asString
+                    ?.let { cleanTtsText(it) }
             )
         } catch (e: Exception) {
-            // If JSON parsing fails, use the raw text as the response
-            // (Gemini sometimes adds prose before/after the JSON)
-            AssistantResponse(
-                intent = "GENERAL",
-                goal = "",
-                response = jsonText.take(500).ifBlank {
-                    "I'm here to help. Could you tell me what you need?"
-                }
-            )
+            Log.e("GeminiLlmService", "Error in parseStructuredResponse", e)
+            handleParseFallback(transcript, conversation)
         }
+    }
+
+    private fun handleParseFallback(transcript: String, conversation: List<ConversationMessage>): AssistantResponse {
+        if (DoctorBookingManager.isDoctorBookingIntent(transcript, conversation)) {
+            val state = DoctorBookingManager.extractState(conversation, transcript)
+            return DoctorBookingManager.getNextStepResponse(state)
+        }
+        if (BillPaymentManager.isBillPaymentIntent(transcript, conversation)) {
+            val state = BillPaymentManager.extractState(conversation, transcript)
+            return BillPaymentManager.getNextStepResponse(state)
+        }
+        return AssistantResponse(
+            intent = "GENERAL",
+            goal = "",
+            response = "I understood your request. Could you please tell me a little more?"
+        )
+    }
+
+    private fun cleanTtsText(text: String): String {
+        return text
+            .replace(Regex("\\*{1,2}"), "")
+            .replace(Regex("^#{1,6}\\s*", RegexOption.MULTILINE), "")
+            .replace(Regex("^[-*]\\s+", RegexOption.MULTILINE), "")
+            .replace(Regex("^>\\s+", RegexOption.MULTILINE), "")
+            .trim()
     }
 }

@@ -36,3 +36,7 @@ val FormsOrangeBg = Color(0xFFFFF4E5)
 
 val HelpPurpleIcon = Color(0xFFAF52DE)
 val HelpPurpleBg = Color(0xFFF7EBFD)
+
+// SOS Emergency Card Colors (high-contrast red)
+val SosRedIcon = Color(0xFFFF3B30)
+val SosRedBg = Color(0xFFFFEBEA)

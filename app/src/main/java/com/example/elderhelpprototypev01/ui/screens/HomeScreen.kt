@@ -3,12 +3,14 @@ package com.example.elderhelpprototypev01.ui.screens
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -24,7 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.elderhelpprototypev01.SahaayViewModel
+import com.example.elderhelpprototypev01.model.BillPayment
+import com.example.elderhelpprototypev01.model.BillType
 import com.example.elderhelpprototypev01.ui.components.*
 import com.example.elderhelpprototypev01.ui.localization.Localization
 import com.example.elderhelpprototypev01.ui.theme.*
@@ -40,12 +45,23 @@ fun SahaayHomeScreen(
     val context = LocalContext.current
 
     // Hoisted persistent state across tab switches and recompositions
-    // Default language is English — user can change in Settings
     var currentLanguage by rememberSaveable { mutableStateOf("English (India)") }
-    var isListening by remember { mutableStateOf(false) }
-    var activeMessage by remember { mutableStateOf<String?>(null) }
     var selectedTab by rememberSaveable { mutableIntStateOf(initialTab) }
+    var activeMessage by remember { mutableStateOf<String?>(null) }
+
+    // Modals
+    var showProfileModal by remember { mutableStateOf(false) }
+    var showDoctorModal by remember { mutableStateOf(false) }
+    var showPensionForm by remember { mutableStateOf(false) }
+    var showBillSelection by remember { mutableStateOf(false) }
+    var selectedBillType by remember { mutableStateOf<BillType?>(null) }
     var isSosModalOpen by remember { mutableStateOf(false) }
+
+    // Reactive State from ViewModel
+    val bookedAppointment by (viewModel?.bookedAppointment?.collectAsStateWithLifecycle()
+        ?: remember { mutableStateOf(null) })
+    val userProfile by (viewModel?.userProfile?.collectAsStateWithLifecycle()
+        ?: remember { mutableStateOf(com.example.elderhelpprototypev01.model.UserProfile()) })
 
     // Sync language preference to ViewModel whenever it changes
     LaunchedEffect(currentLanguage) {
@@ -78,10 +94,10 @@ fun SahaayHomeScreen(
                     if (viewModel != null) {
                         VoiceScreen(
                             viewModel = viewModel,
+                            onNavigateBack = { selectedTab = 0 },
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        // Preview fallback
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -93,8 +109,27 @@ fun SahaayHomeScreen(
                         }
                     }
                 }
+                2 -> {
+                    // Tab Index 2: Services Screen
+                    if (viewModel != null) {
+                        ServicesScreen(
+                            viewModel = viewModel,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "📋 Services",
+                                style = Typography.headlineMedium.copy(color = AppleTextMuted)
+                            )
+                        }
+                    }
+                }
                 3 -> {
-                    // Tab Index 3: Settings Screen (uses hoisted currentLanguage & callback)
+                    // Tab Index 3: Settings Screen
                     SettingsScreen(
                         currentLanguage = currentLanguage,
                         onLanguageChange = { newLang ->
@@ -103,7 +138,7 @@ fun SahaayHomeScreen(
                     )
                 }
                 else -> {
-                    // Main Home Screen (Uses localized strings everywhere)
+                    // Tab Index 0: Main Dashboard Screen
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -114,22 +149,28 @@ fun SahaayHomeScreen(
                                 .fillMaxSize()
                                 .verticalScroll(scrollState)
                                 .padding(horizontal = 18.dp)
-                                .padding(top = 16.dp, bottom = 24.dp),
+                                .padding(top = 16.dp, bottom = 28.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Top
                         ) {
-                            // Top Header Row
+                            // 1. Top Header Row with Clickable Profile Button
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Profile Avatar + App Name & Localized Subtitle
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Profile Button & Greeting
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { showProfileModal = true }
+                                        .padding(4.dp)
+                                ) {
                                     Box(
                                         contentAlignment = Alignment.Center,
                                         modifier = Modifier
-                                            .size(40.dp)
+                                            .size(42.dp)
                                             .clip(CircleShape)
                                             .background(AppleBlueLight)
                                     ) {
@@ -141,19 +182,28 @@ fun SahaayHomeScreen(
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
 
                                     Column {
-                                        Text(
-                                            text = "ElderhelpV0.1",
-                                            style = Typography.titleLarge.copy(
-                                                fontSize = 22.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = AppleTextPrimary
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = userProfile.fullName,
+                                                style = Typography.titleLarge.copy(
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = AppleTextPrimary
+                                                )
                                             )
-                                        )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = "Edit Profile",
+                                                tint = AppleBlue,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
                                         Text(
-                                            text = strings.appSubtitle,
+                                            text = "Sahaay Voice Assistant",
                                             style = Typography.bodyMedium.copy(
                                                 fontSize = 13.sp,
                                                 color = AppleTextMuted
@@ -162,7 +212,7 @@ fun SahaayHomeScreen(
                                     }
                                 }
 
-                                // Search & Notifications
+                                // Quick Action Icons
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(onClick = {
                                         Toast.makeText(context, "Search clicked", Toast.LENGTH_SHORT).show()
@@ -171,7 +221,7 @@ fun SahaayHomeScreen(
                                             imageVector = Icons.Default.Search,
                                             contentDescription = "Search",
                                             tint = AppleTextPrimary,
-                                            modifier = Modifier.size(24.dp)
+                                            modifier = Modifier.size(22.dp)
                                         )
                                     }
                                     IconButton(onClick = {
@@ -181,7 +231,7 @@ fun SahaayHomeScreen(
                                             imageVector = Icons.Default.Notifications,
                                             contentDescription = "Notifications",
                                             tint = AppleTextPrimary,
-                                            modifier = Modifier.size(24.dp)
+                                            modifier = Modifier.size(22.dp)
                                         )
                                     }
                                 }
@@ -189,63 +239,58 @@ fun SahaayHomeScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Localized Status Tag Chip
-                            StatusCard(
-                                isListening = isListening,
-                                statusText = strings.statusText,
+                            // 2. Featured Quick Task: Doctor Booking Widget
+                            DoctorBookingWidget(
+                                appointment = bookedAppointment,
+                                onClick = { showDoctorModal = true },
                                 modifier = Modifier.fillMaxWidth()
                             )
 
                             Spacer(modifier = Modifier.height(18.dp))
 
-                            // Localized Hero Circular Voice Assistant Banner
+                            // 4. Hero Voice Assistant Banner (Direct Voice Access)
                             MicrophoneButton(
-                                isListening = isListening,
+                                isListening = false,
                                 currentLanguage = currentLanguage,
                                 onClick = {
-                                    isListening = !isListening
-                                    activeMessage = if (isListening) {
-                                        "${strings.listeningText}"
-                                    } else {
-                                        "Voice mode paused."
+                                    selectedTab = 1 // Switch to Voice Screen directly
+                                    viewModel?.startListening()
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // 5. Expanded Pay Bills Section (Electricity, Water, Mobile Recharge)
+                            PayBillsSection(
+                                onCategoryClick = { type ->
+                                    selectedBillType = type
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // 6. Quick Services Grid
+                            QuickActionsSection(
+                                currentLanguage = currentLanguage,
+                                onActionClick = { action ->
+                                    when (action.id) {
+                                        "doctor" -> showDoctorModal = true
+                                        "bills" -> showBillSelection = true
+                                        "forms" -> showPensionForm = true
+                                        "sos" -> isSosModalOpen = true
+                                        else -> {
+                                            activeMessage = "${action.title} selected"
+                                            Toast.makeText(context, "${action.title} clicked", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )
-
-                            Spacer(modifier = Modifier.height(18.dp))
-
-                            // High-Contrast Emergency SOS Pill Button
-                            EmergencySosButton(
-                                onClick = {
-                                    isSosModalOpen = true
-                                },
-                                currentLanguage = currentLanguage,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            Spacer(modifier = Modifier.height(22.dp))
-
-                            // Localized Quick Services Grid
-                            QuickActionsSection(
-                                currentLanguage = currentLanguage,
-                                onActionClick = { action ->
-                                    activeMessage = "${action.title} selected"
-                                    Toast.makeText(context, "${action.title} clicked", Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Sahaay Floating Overlay Toggle Card
-                            OverlayToggleCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                refreshTick = overlayRefreshTick
-                            )
                         }
 
-                        // Active Feedback Toast / Banner
+                        // Bottom Toast Feedback Banner
                         AnimatedVisibility(
                             visible = activeMessage != null,
                             enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
@@ -285,15 +330,68 @@ fun SahaayHomeScreen(
                             }
                         }
 
-                        // Emergency SOS Guardrail Countdown Modal Overlay
+                        // Modal Dialogs
+                        if (showProfileModal) {
+                            ProfileModal(
+                                profile = userProfile,
+                                onDismiss = { showProfileModal = false },
+                                onSaveProfile = { updated ->
+                                    viewModel?.updateUserProfile(updated)
+                                    Toast.makeText(context, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+
+                        if (showDoctorModal) {
+                            DoctorAppointmentModal(
+                                appointment = bookedAppointment,
+                                onDismiss = { showDoctorModal = false },
+                                onBookManual = { newBooking ->
+                                    viewModel?.updateAppointment(newBooking)
+                                    Toast.makeText(context, "Doctor appointment scheduled!", Toast.LENGTH_SHORT).show()
+                                },
+                                onCancelAppointment = {
+                                    viewModel?.cancelAppointment()
+                                    Toast.makeText(context, "Appointment cancelled.", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+
+                        if (showPensionForm) {
+                            PensionFormScreen(
+                                userProfile = userProfile,
+                                onDismiss = { showPensionForm = false }
+                            )
+                        }
+
+                        if (showBillSelection) {
+                            BillSelectionModal(
+                                onDismiss = { showBillSelection = false },
+                                onSelectBillType = { type ->
+                                    selectedBillType = type
+                                }
+                            )
+                        }
+
+                        selectedBillType?.let { type ->
+                            BillPaymentModal(
+                                billType = type,
+                                onDismiss = { selectedBillType = null },
+                                onPaymentSuccess = { payment ->
+                                    viewModel?.recordBillPayment(payment)
+                                    Toast.makeText(context, "₹${payment.amount} paid successfully!", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+
                         if (isSosModalOpen) {
                             EmergencySosModal(
                                 onDismiss = { isSosModalOpen = false },
                                 onEmergencyTriggered = {
-                                    activeMessage = "Emergency call initiated to Rahul (+91 98765 43210)"
+                                    activeMessage = "Emergency call initiated to ${userProfile.emergencyContactName} (${userProfile.emergencyContactPhone})"
                                 },
-                                contactName = "Rahul",
-                                contactNumber = "+91 98765 43210",
+                                contactName = userProfile.emergencyContactName,
+                                contactNumber = userProfile.emergencyContactPhone,
                                 currentLanguage = currentLanguage
                             )
                         }

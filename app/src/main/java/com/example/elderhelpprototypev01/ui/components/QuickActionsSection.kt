@@ -2,10 +2,10 @@ package com.example.elderhelpprototypev01.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -65,13 +65,13 @@ fun QuickActionsSection(
             iconBgColor = FormsOrangeBg
         ),
         QuickActionItem(
-            id = "help",
-            title = strings.helpTitle,
-            subtitle = strings.helpSubtitle,
-            buttonText = strings.helpBtn,
-            icon = Icons.AutoMirrored.Filled.HelpOutline,
-            iconTint = HelpPurpleIcon,
-            iconBgColor = HelpPurpleBg
+            id = "sos",
+            title = strings.sosTitle,
+            subtitle = strings.sosSubtitle,
+            buttonText = strings.sosBtn,
+            icon = Icons.Default.Warning,
+            iconTint = SosRedIcon,
+            iconBgColor = SosRedBg
         )
     )
 

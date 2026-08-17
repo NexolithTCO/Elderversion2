@@ -84,6 +84,43 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
     val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
 
     // ------------------------------------------------------------------
+    // App Domain State: Appointments, User Profile, Bills
+    // ------------------------------------------------------------------
+
+    private val _bookedAppointment = MutableStateFlow<com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState?>(
+        com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState(
+            specialty = "Cardiologist",
+            location = "Bandra Medical Clinic",
+            dateTime = "Tomorrow at 5:00 PM",
+            mode = "in-person clinic visit",
+            isConfirmed = true
+        )
+    )
+    val bookedAppointment: StateFlow<com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState?> = _bookedAppointment.asStateFlow()
+
+    private val _userProfile = MutableStateFlow(com.example.elderhelpprototypev01.model.UserProfile())
+    val userProfile: StateFlow<com.example.elderhelpprototypev01.model.UserProfile> = _userProfile.asStateFlow()
+
+    private val _paidBills = MutableStateFlow<List<com.example.elderhelpprototypev01.model.BillPayment>>(emptyList())
+    val paidBills: StateFlow<List<com.example.elderhelpprototypev01.model.BillPayment>> = _paidBills.asStateFlow()
+
+    fun updateAppointment(state: com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState) {
+        _bookedAppointment.value = state
+    }
+
+    fun cancelAppointment() {
+        _bookedAppointment.value = null
+    }
+
+    fun updateUserProfile(profile: com.example.elderhelpprototypev01.model.UserProfile) {
+        _userProfile.value = profile
+    }
+
+    fun recordBillPayment(payment: com.example.elderhelpprototypev01.model.BillPayment) {
+        _paidBills.value = listOf(payment) + _paidBills.value
+    }
+
+    // ------------------------------------------------------------------
     // Voice Interaction Engine State Flows
     // ------------------------------------------------------------------
 
@@ -351,6 +388,31 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 )
                 _conversation.value = _conversation.value + assistantMessage
                 lastSuccessfulResponse = response
+
+                // Track and sync active doctor appointment state
+                if (com.example.elderhelpprototypev01.ai.DoctorBookingManager.isDoctorBookingIntent(text, _conversation.value)) {
+                    val extracted = com.example.elderhelpprototypev01.ai.DoctorBookingManager.extractState(_conversation.value, text)
+                    if (extracted.specialty != null) {
+                        _bookedAppointment.value = extracted
+                    }
+                }
+
+                // Track and record bill payment if confirmed via voice flow
+                if (com.example.elderhelpprototypev01.ai.BillPaymentManager.isBillPaymentIntent(text, _conversation.value)) {
+                    val paymentState = com.example.elderhelpprototypev01.ai.BillPaymentManager.extractState(_conversation.value, text)
+                    if (paymentState.isConfirmed && paymentState.billType != null && paymentState.amount != null) {
+                        val payment = com.example.elderhelpprototypev01.model.BillPayment(
+                            id = "BP-${System.currentTimeMillis() % 100000}",
+                            type = paymentState.billType!!,
+                            identifier = paymentState.accountId ?: "N/A",
+                            provider = paymentState.provider ?: paymentState.billType!!.defaultProvider,
+                            amount = paymentState.amount!!,
+                            status = "Paid Successfully",
+                            timestamp = "Just now"
+                        )
+                        recordBillPayment(payment)
+                    }
+                }
 
                 // Auto-speak using speakRaw() for guaranteed no-markdown output
                 if (_ttsEnabled.value) {
