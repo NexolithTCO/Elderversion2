@@ -110,9 +110,9 @@ fun SahaayHomeScreen(
                     }
                 }
                 2 -> {
-                    // Tab Index 2: Services Screen
+                    // Tab Index 2: Transactions Screen
                     if (viewModel != null) {
-                        ServicesScreen(
+                        TransactionsScreen(
                             viewModel = viewModel,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -122,7 +122,7 @@ fun SahaayHomeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "📋 Services",
+                                text = "🧾 Transactions",
                                 style = Typography.headlineMedium.copy(color = AppleTextMuted)
                             )
                         }

@@ -104,8 +104,68 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
     private val _paidBills = MutableStateFlow<List<com.example.elderhelpprototypev01.model.BillPayment>>(emptyList())
     val paidBills: StateFlow<List<com.example.elderhelpprototypev01.model.BillPayment>> = _paidBills.asStateFlow()
 
+    private val _transactions = MutableStateFlow<List<com.example.elderhelpprototypev01.model.TransactionRecord>>(
+        listOf(
+            com.example.elderhelpprototypev01.model.TransactionRecord(
+                id = "TXN-EL-9021",
+                category = com.example.elderhelpprototypev01.model.TransactionCategory.ELECTRICITY,
+                provider = "Adani Electricity",
+                identifier = "102938475",
+                amount = "1450",
+                status = "Successful",
+                timestamp = "14 Aug 2026, 02:45 PM",
+                billType = com.example.elderhelpprototypev01.model.BillType.ELECTRICITY
+            ),
+            com.example.elderhelpprototypev01.model.TransactionRecord(
+                id = "TXN-MB-8412",
+                category = com.example.elderhelpprototypev01.model.TransactionCategory.MOBILE,
+                provider = "Jio Prepaid",
+                identifier = "9876512345",
+                amount = "299",
+                status = "Successful",
+                timestamp = "11 Aug 2026, 07:15 PM",
+                billType = com.example.elderhelpprototypev01.model.BillType.MOBILE
+            ),
+            com.example.elderhelpprototypev01.model.TransactionRecord(
+                id = "TXN-DOC-7730",
+                category = com.example.elderhelpprototypev01.model.TransactionCategory.DOCTOR,
+                provider = "Bandra Medical Clinic (Dr. Sharma)",
+                identifier = "DOC-BK-8821",
+                amount = "800",
+                status = "Successful",
+                timestamp = "08 Aug 2026, 10:30 AM",
+                doctorSpecialty = "Cardiologist"
+            ),
+            com.example.elderhelpprototypev01.model.TransactionRecord(
+                id = "TXN-WT-6109",
+                category = com.example.elderhelpprototypev01.model.TransactionCategory.WATER,
+                provider = "Municipal Corporation Water Board",
+                identifier = "WB-8839201",
+                amount = "480",
+                status = "Successful",
+                timestamp = "02 Aug 2026, 11:20 AM",
+                billType = com.example.elderhelpprototypev01.model.BillType.WATER
+            )
+        )
+    )
+    val transactions: StateFlow<List<com.example.elderhelpprototypev01.model.TransactionRecord>> = _transactions.asStateFlow()
+
     fun updateAppointment(state: com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState) {
         _bookedAppointment.value = state
+        if (state.isConfirmed) {
+            val df = java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault())
+            val record = com.example.elderhelpprototypev01.model.TransactionRecord(
+                id = "TXN-DOC-${System.currentTimeMillis() % 100000}",
+                category = com.example.elderhelpprototypev01.model.TransactionCategory.DOCTOR,
+                provider = "${state.location ?: "Medical Clinic"} (${state.specialty ?: "General Physician"})",
+                identifier = "DOC-BK-${System.currentTimeMillis() % 10000}",
+                amount = "800",
+                status = "Successful",
+                timestamp = df.format(java.util.Date()),
+                doctorSpecialty = state.specialty
+            )
+            _transactions.value = listOf(record) + _transactions.value
+        }
     }
 
     fun cancelAppointment() {
@@ -118,6 +178,26 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
 
     fun recordBillPayment(payment: com.example.elderhelpprototypev01.model.BillPayment) {
         _paidBills.value = listOf(payment) + _paidBills.value
+        val category = when (payment.type) {
+            com.example.elderhelpprototypev01.model.BillType.ELECTRICITY -> com.example.elderhelpprototypev01.model.TransactionCategory.ELECTRICITY
+            com.example.elderhelpprototypev01.model.BillType.WATER -> com.example.elderhelpprototypev01.model.TransactionCategory.WATER
+            com.example.elderhelpprototypev01.model.BillType.MOBILE -> com.example.elderhelpprototypev01.model.TransactionCategory.MOBILE
+        }
+        val record = com.example.elderhelpprototypev01.model.TransactionRecord(
+            id = payment.id,
+            category = category,
+            provider = payment.provider,
+            identifier = payment.identifier,
+            amount = payment.amount,
+            status = "Successful",
+            timestamp = payment.timestamp,
+            billType = payment.type
+        )
+        _transactions.value = listOf(record) + _transactions.value
+    }
+
+    fun recordTransaction(transaction: com.example.elderhelpprototypev01.model.TransactionRecord) {
+        _transactions.value = listOf(transaction) + _transactions.value
     }
 
     // ------------------------------------------------------------------

@@ -215,11 +215,12 @@ fun DoctorBookingWidget(
 @Composable
 fun DoctorAppointmentModal(
     appointment: DoctorBookingManager.BookingState?,
+    initialTab: Int? = null,
     onDismiss: () -> Unit,
     onBookManual: (DoctorBookingManager.BookingState) -> Unit,
     onCancelAppointment: () -> Unit
 ) {
-    var selectedTab by remember { mutableIntStateOf(if (appointment?.specialty != null) 0 else 1) }
+    var selectedTab by remember { mutableIntStateOf(initialTab ?: if (appointment?.specialty != null) 0 else 1) }
 
     // Manual Form State
     var specialty by remember { mutableStateOf(appointment?.specialty ?: "General Physician") }

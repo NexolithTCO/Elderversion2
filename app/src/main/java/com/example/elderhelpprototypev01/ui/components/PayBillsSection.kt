@@ -171,12 +171,15 @@ private fun BillCategoryCard(
 @Composable
 fun BillPaymentModal(
     billType: BillType,
+    initialIdentifier: String? = null,
+    initialProvider: String? = null,
+    initialAmount: String? = null,
     onDismiss: () -> Unit,
     onPaymentSuccess: (BillPayment) -> Unit
 ) {
-    var identifier by remember { mutableStateOf(billType.sampleIdentifier) }
-    var provider by remember { mutableStateOf(billType.defaultProvider) }
-    var amount by remember { mutableStateOf(billType.defaultAmount) }
+    var identifier by remember { mutableStateOf(initialIdentifier ?: billType.sampleIdentifier) }
+    var provider by remember { mutableStateOf(initialProvider ?: billType.defaultProvider) }
+    var amount by remember { mutableStateOf(initialAmount ?: billType.defaultAmount) }
     var isProcessing by remember { mutableStateOf(false) }
     var isPaid by remember { mutableStateOf(false) }
     var receiptPayment by remember { mutableStateOf<BillPayment?>(null) }

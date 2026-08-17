@@ -3,7 +3,7 @@ package com.example.elderhelpprototypev01.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
@@ -37,7 +37,7 @@ fun BottomNavigationBar(
     val items = listOf(
         NavItem(strings.navHome, Icons.Default.Home),
         NavItem(strings.navVoice, Icons.Default.Mic),
-        NavItem(strings.navServices, Icons.Default.GridView),
+        NavItem(strings.navTransactions, Icons.AutoMirrored.Filled.ReceiptLong),
         NavItem(strings.navSettings, Icons.Default.Settings)
     )
 
