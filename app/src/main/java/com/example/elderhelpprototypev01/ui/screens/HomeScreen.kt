@@ -3,6 +3,7 @@ package com.example.elderhelpprototypev01.ui.screens
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -213,8 +216,19 @@ fun SahaayHomeScreen(
                                     }
                                 }
 
-                                // Quick Action Icons
+                                // Quick Action Icons + Language Toggle
                                 Row(verticalAlignment = Alignment.CenterVertically) {
+                                    // Language Toggle Pill: taps between English and Hindi
+                                    LanguageTogglePill(
+                                        currentLanguage = currentLanguage,
+                                        onToggle = {
+                                            currentLanguage = if (currentLanguage.contains("Hindi")) {
+                                                "English (India)"
+                                            } else {
+                                                "Hindi (हिंदी)"
+                                            }
+                                        }
+                                    )
                                     IconButton(onClick = {
                                         Toast.makeText(context, "Search clicked", Toast.LENGTH_SHORT).show()
                                     }) {
@@ -418,5 +432,53 @@ fun SahaayHomeScreen(
 fun SahaayHomeScreenPreview() {
     ElderHelpPrototypeV01Theme {
         SahaayHomeScreen()
+    }
+}
+
+/**
+ * LanguageTogglePill
+ *
+ * A compact, accessible pill button that lives in the Home screen top header.
+ * Displays "A" when the app is in English and "अ" when the app is in Hindi.
+ * Tapping it calls [onToggle] to switch the global language state.
+ *
+ * Accessibility: A `contentDescription` is attached so TalkBack announces
+ * "Switch to Hindi" / "Switch to English" appropriately.
+ */
+@Composable
+fun LanguageTogglePill(
+    currentLanguage: String,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isHindi = currentLanguage.contains("Hindi")
+    val label = if (isHindi) "अ" else "A"
+    val accessibilityLabel = if (isHindi) "Switch to English" else "हिंदी में बदलें"
+
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (isHindi) AppleBlue else Color.Transparent,
+        border = if (!isHindi) {
+            androidx.compose.foundation.BorderStroke(1.5.dp, AppleBlue.copy(alpha = 0.6f))
+        } else null,
+        modifier = modifier
+            .semantics { contentDescription = accessibilityLabel }
+            .clickable(onClick = onToggle)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .padding(horizontal = 10.dp, vertical = 5.dp)
+                .defaultMinSize(minWidth = 36.dp)
+        ) {
+            Text(
+                text = label,
+                style = Typography.labelLarge.copy(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isHindi) Color.White else AppleBlue
+                )
+            )
+        }
     }
 }

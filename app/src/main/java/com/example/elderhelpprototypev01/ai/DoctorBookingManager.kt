@@ -31,11 +31,15 @@ object DoctorBookingManager {
     )
 
     private val DOCTOR_INTENT_KEYWORDS = listOf(
+        // English keywords
         "doctor", "appointment", "book a doctor", "see a doctor",
         "consult a doctor", "medical appointment", "physician",
         "dermatologist", "cardiologist", "pediatrician", "dentist",
         "orthopedic", "neurologist", "gynecologist", "ent specialist",
-        "eye specialist", "clinic", "hospital", "dr", "dr."
+        "eye specialist", "clinic", "hospital", "dr", "dr.",
+        // Hindi keywords
+        "डॉक्टर", "अपॉइंटमेंट", "डॉक्टर बुक", "डॉक्टर से मिलना",
+        "इलाज", "परामर्श", "क्लिनिक", "अस्पताल", "दवाखाना"
     )
 
     private val KNOWN_SPECIALTIES = listOf(
@@ -54,7 +58,7 @@ object DoctorBookingManager {
         if (DOCTOR_INTENT_KEYWORDS.any { lowerTranscript.contains(it) }) {
             return true
         }
-        // Check if previous assistant message was asking one of our booking questions
+        // Check if previous assistant message was asking one of our booking questions (English or Hindi)
         val lastAssistantMsg = conversation.lastOrNull { it.role == com.example.elderhelpprototypev01.model.MessageRole.ASSISTANT }?.text?.lowercase(Locale.ROOT)
         if (lastAssistantMsg != null) {
             if (lastAssistantMsg.contains("type of doctor") ||
@@ -62,7 +66,13 @@ object DoctorBookingManager {
                 lastAssistantMsg.contains("date and time") ||
                 lastAssistantMsg.contains("in-person clinic visit or an online") ||
                 lastAssistantMsg.contains("confirm this booking") ||
-                lastAssistantMsg.contains("appointment details")
+                lastAssistantMsg.contains("appointment details") ||
+                // Hindi assistant question patterns
+                lastAssistantMsg.contains("किस तरह के डॉक्टर") ||
+                lastAssistantMsg.contains("इलाके या क्लिनिक") ||
+                lastAssistantMsg.contains("तारीख और समय") ||
+                lastAssistantMsg.contains("क्लिनिक जाकर") ||
+                lastAssistantMsg.contains("कन्फर्म कर दूं")
             ) {
                 return true
             }
@@ -197,8 +207,17 @@ object DoctorBookingManager {
 
     /**
      * Generates the next question or response in the exact 5-step sequence.
+     *
+     * @param state        Current booking state extracted from the conversation.
+     * @param userLanguage Language preference from the ViewModel (e.g. "Hindi (हिंदी)").
+     *                     When Hindi is active, all step prompts are returned in Hindi.
      */
-    fun getNextStepResponse(state: BookingState): AssistantResponse {
+    fun getNextStepResponse(state: BookingState, userLanguage: String = "English"): AssistantResponse {
+        val isHindi = userLanguage.contains("Hindi") || userLanguage.contains("हिंदी")
+        return if (isHindi) getNextStepResponseHindi(state) else getNextStepResponseEnglish(state)
+    }
+
+    private fun getNextStepResponseEnglish(state: BookingState): AssistantResponse {
         return when {
             // Step 1: Specialty
             state.specialty == null -> {
@@ -272,6 +291,85 @@ object DoctorBookingManager {
                     clarifyingQuestion = null,
                     suggestedNextStep = "You can ask for another appointment or any health guidance.",
                     helpfulTip = "Please arrive 10 minutes early or ensure your internet connection is ready for online consultation."
+                )
+            }
+        }
+    }
+
+    private fun getNextStepResponseHindi(state: BookingState): AssistantResponse {
+        return when {
+            // चरण 1: विशेषज्ञता
+            state.specialty == null -> {
+                AssistantResponse(
+                    intent = "BOOK_APPOINTMENT",
+                    goal = "डॉक्टर का प्रकार पूछें",
+                    response = "आप किस तरह के डॉक्टर से अपॉइंटमेंट लेना चाहते हैं? (जैसे: सामान्य डॉक्टर, त्वचा विशेषज्ञ, या हृदय रोग विशेषज्ञ)",
+                    needsClarification = true,
+                    clarifyingQuestion = "आप किस तरह के डॉक्टर से अपॉइंटमेंट लेना चाहते हैं? (जैसे: सामान्य डॉक्टर, त्वचा विशेषज्ञ, या हृदय रोग विशेषज्ञ)",
+                    suggestedNextStep = "डॉक्टर का प्रकार बोलें, जैसे सामान्य डॉक्टर या त्वचा विशेषज्ञ।"
+                )
+            }
+
+            // चरण 2: स्थान
+            state.location == null -> {
+                AssistantResponse(
+                    intent = "BOOK_APPOINTMENT",
+                    goal = "पसंदीदा स्थान पूछें",
+                    response = "आप किस इलाके या क्लिनिक में जाना पसंद करेंगे?",
+                    needsClarification = true,
+                    clarifyingQuestion = "आप किस इलाके या क्लिनिक में जाना पसंद करेंगे?",
+                    suggestedNextStep = "अपना पसंदीदा इलाका या शहर बताएं, जैसे बांद्रा या सेंट्रल क्लिनिक।"
+                )
+            }
+
+            // चरण 3: तारीख और समय
+            state.dateTime == null -> {
+                AssistantResponse(
+                    intent = "BOOK_APPOINTMENT",
+                    goal = "पसंदीदा तारीख और समय पूछें",
+                    response = "आपके लिए कौन सी तारीख और समय सबसे सही रहेगा?",
+                    needsClarification = true,
+                    clarifyingQuestion = "आपके लिए कौन सी तारीख और समय सबसे सही रहेगा?",
+                    suggestedNextStep = "अपनी पसंदीदा तारीख और समय बताएं, जैसे कल शाम 5 बजे।"
+                )
+            }
+
+            // चरण 4: परामर्श का तरीका
+            state.mode == null -> {
+                AssistantResponse(
+                    intent = "BOOK_APPOINTMENT",
+                    goal = "परामर्श का तरीका पूछें",
+                    response = "क्या आप क्लिनिक जाकर दिखाना चाहते हैं या ऑनलाइन परामर्श लेना चाहते हैं?",
+                    needsClarification = true,
+                    clarifyingQuestion = "क्या आप क्लिनिक जाकर दिखाना चाहते हैं या ऑनलाइन परामर्श लेना चाहते हैं?",
+                    suggestedNextStep = "क्लिनिक विज़िट या ऑनलाइन परामर्श बोलें।"
+                )
+            }
+
+            // चरण 5: पुष्टि
+            !state.isConfirmed -> {
+                val summary = "मैंने ${state.location} में ${state.dateTime} के लिए ${state.specialty} का अपॉइंटमेंट तय किया है। क्या मैं इसे कन्फर्म कर दूं?"
+                AssistantResponse(
+                    intent = "BOOK_APPOINTMENT",
+                    goal = "अपॉइंटमेंट विवरण की पुष्टि करें",
+                    response = summary,
+                    needsClarification = true,
+                    clarifyingQuestion = summary,
+                    suggestedNextStep = "पुष्टि के लिए 'हाँ' बोलें, या यदि कोई बदलाव चाहते हैं तो बताएं।"
+                )
+            }
+
+            // पूर्ण / कन्फर्म
+            else -> {
+                val confirmedMsg = "आपका ${state.specialty} का अपॉइंटमेंट ${state.location} में ${state.dateTime} पर (${state.mode}) सफलतापूर्वक कन्फर्म हो गया है! क्या मैं आपकी और कोई मदद कर सकता हूँ?"
+                AssistantResponse(
+                    intent = "BOOK_APPOINTMENT",
+                    goal = "अपॉइंटमेंट कन्फर्म",
+                    response = confirmedMsg,
+                    needsClarification = false,
+                    clarifyingQuestion = null,
+                    suggestedNextStep = "आप कोई और अपॉइंटमेंट बुक कर सकते हैं या स्वास्थ्य संबंधी सहायता मांग सकते हैं।",
+                    helpfulTip = "कृपया 10 मिनट पहले पहुँचें या ऑनलाइन परामर्श के लिए इंटरनेट कनेक्शन सुनिश्चित करें।"
                 )
             }
         }

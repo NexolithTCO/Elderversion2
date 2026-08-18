@@ -53,13 +53,19 @@ class GeminiLlmService : LlmService {
         conversation: List<ConversationMessage>,
         userLanguage: String
     ): AssistantResponse = withContext(Dispatchers.IO) {
+        val isHindi = userLanguage.contains("Hindi") || userLanguage.contains("हिंदी")
+
         if (transcript.isBlank()) {
+            val repairMsg = if (isHindi)
+                "मैं सुन नहीं पाया। कृपया दोबारा बोलने की कोशिश करें।"
+            else
+                "I didn't catch that. Could you please try speaking again?"
             return@withContext AssistantResponse(
                 intent = "REPAIR",
                 goal = "Prompt user to speak",
-                response = "I didn't catch that. Could you please try speaking again?",
+                response = repairMsg,
                 needsClarification = true,
-                clarifyingQuestion = "I didn't catch that. Could you please try speaking again?"
+                clarifyingQuestion = repairMsg
             )
         }
 
@@ -70,13 +76,17 @@ class GeminiLlmService : LlmService {
         if (apiKey == "REPLACE_WITH_YOUR_GEMINI_API_KEY" || apiKey.isBlank()) {
             if (isDoctorBooking) {
                 val state = DoctorBookingManager.extractState(conversation, transcript)
-                return@withContext DoctorBookingManager.getNextStepResponse(state)
+                return@withContext DoctorBookingManager.getNextStepResponse(state, userLanguage)
             }
             if (isBillPayment) {
                 val state = BillPaymentManager.extractState(conversation, transcript)
-                return@withContext BillPaymentManager.getNextStepResponse(state)
+                return@withContext BillPaymentManager.getNextStepResponse(state, userLanguage)
             }
-            return@withContext AssistantResponse.error(friendlyConnectionError)
+            val fallbackMsg = if (isHindi)
+                "अभी कनेक्शन में थोड़ी दिक्कत है। कृपया थोड़ी देर बाद फिर कोशिश करें।"
+            else
+                friendlyConnectionError
+            return@withContext AssistantResponse.error(fallbackMsg)
         }
 
         val requestBodyJson = buildRequestBody(transcript, conversation, userLanguage)
@@ -97,7 +107,7 @@ class GeminiLlmService : LlmService {
                 val responseBody = response.body?.string()
 
                 if (response.isSuccessful && !responseBody.isNullOrBlank()) {
-                    val parsed = parseGeminiResponse(responseBody, transcript, conversation)
+                    val parsed = parseGeminiResponse(responseBody, transcript, conversation, userLanguage)
                     return@withContext parsed
                 } else {
                     Log.w("GeminiLlmService", "Model $model returned HTTP $code: $responseBody")
@@ -113,15 +123,19 @@ class GeminiLlmService : LlmService {
         // All models or network failed - use smart deterministic fallbacks
         if (isDoctorBooking) {
             val state = DoctorBookingManager.extractState(conversation, transcript)
-            return@withContext DoctorBookingManager.getNextStepResponse(state)
+            return@withContext DoctorBookingManager.getNextStepResponse(state, userLanguage)
         }
         if (isBillPayment) {
             val state = BillPaymentManager.extractState(conversation, transcript)
-            return@withContext BillPaymentManager.getNextStepResponse(state)
+            return@withContext BillPaymentManager.getNextStepResponse(state, userLanguage)
         }
 
         Log.e("GeminiLlmService", "All Gemini models failed. Returning friendly fallback.", lastError)
-        AssistantResponse.error(friendlyConnectionError)
+        val errorMsg = if (isHindi)
+            "अभी कनेक्शन में थोड़ी दिक्कत है। कृपया थोड़ी देर बाद फिर कोशिश करें।"
+        else
+            friendlyConnectionError
+        AssistantResponse.error(errorMsg)
     }
 
     // ------------------------------------------------------------------
@@ -180,28 +194,19 @@ class GeminiLlmService : LlmService {
     }
 
     private fun buildSystemPrompt(userLanguage: String): String {
-        val languageInstruction = when {
-            userLanguage.contains("Hindi") ->
-                """The user prefers Hindi or Hinglish. Respond in the SAME language mix the user used.
-                   If they spoke in Hinglish, reply in natural Hinglish.
-                   If they spoke in pure Hindi (Devanagari), reply in simple Hindi.
-                   Keep words short, empathetic, and common."""
-            userLanguage.contains("Marathi") ->
-                "Respond in simple Marathi (मराठी). Use easy, everyday words only."
-            userLanguage.contains("Tamil") ->
-                "Respond in simple Tamil (தமிழ்). Use easy, everyday words only."
-            userLanguage.contains("Telugu") ->
-                "Respond in simple Telugu (తెలుగు). Use easy, everyday words only."
-            userLanguage.contains("Bengali") ->
-                "Respond in simple Bengali (বাংলা). Use easy, everyday words only."
-            else ->
-                "Respond in simple, clear, empathetic English. Short sentences only."
-        }
+        val isHindi = userLanguage.contains("Hindi") || userLanguage.contains("हिंदी")
 
-        return """
+        return if (isHindi) buildHindiSystemPrompt() else buildEnglishSystemPrompt()
+    }
+
+    // ------------------------------------------------------------------
+    // English System Prompt (unchanged existing logic)
+    // ------------------------------------------------------------------
+
+    private fun buildEnglishSystemPrompt(): String = """
 You are "Sahaay", a calm, empathetic, and intelligent voice assistant helping users (including elderly users) book medical appointments and get assistance.
 
-$languageInstruction
+Respond in simple, clear, empathetic English. Short sentences only.
 
 ### CONVERSATION FLOW FOR DOCTOR BOOKING:
 When the user expresses an intent to book a doctor (e.g., "book a doctor", "I need an appointment", "find a doctor"), guide them through a step-by-step sequential dialogue to gather all necessary details.
@@ -260,8 +265,89 @@ You MUST return ONLY valid JSON matching this schema:
   "suggested_next_step": "Short helper tip for user or null",
   "helpful_tip": "Optional brief safety or preparation tip or null"
 }
-        """.trimIndent()
-    }
+    """.trimIndent()
+
+    // ------------------------------------------------------------------
+    // Hindi System Prompt — full bilingual sequential flows
+    // ------------------------------------------------------------------
+
+    private fun buildHindiSystemPrompt(): String = """
+आप "Sahaay" हैं — एक शांत, सहानुभूतिपूर्ण और बुद्धिमान वॉयस असिस्टेंट जो बुजुर्ग उपयोगकर्ताओं की मदद करते हैं।
+
+भाषा निर्देश: यदि उपयोगकर्ता हिंदी में बोलें तो सरल हिंदी में उत्तर दें। यदि वे Hinglish (हिंदी + अंग्रेज़ी मिश्रण) में बोलें तो उसी मिश्रण में उत्तर दें। वाक्य छोटे, सहानुभूतिपूर्ण और आसान रखें।
+
+### डॉक्टर अपॉइंटमेंट बुकिंग फ्लो:
+जब उपयोगकर्ता डॉक्टर का अपॉइंटमेंट लेना चाहें (जैसे: "डॉक्टर से मिलना है", "अपॉइंटमेंट चाहिए", "doctor book karna hai"), तो इस सटीक क्रमिक प्रश्नावली का पालन करें।
+
+केवल एक प्रश्न एक बार में पूछें:
+
+चरण 1 — विशेषज्ञता / डॉक्टर का प्रकार:
+- प्रॉम्प्ट: "आप किस तरह के डॉक्टर से अपॉइंटमेंट लेना चाहते हैं? (जैसे: सामान्य डॉक्टर, त्वचा विशेषज्ञ, या हृदय रोग विशेषज्ञ)"
+
+चरण 2 — स्थान / क्लिनिक:
+- प्रॉम्प्ट: "आप किस इलाके या क्लिनिक में जाना पसंद करेंगे?"
+
+चरण 3 — पसंदीदा तारीख और समय:
+- प्रॉम्प्ट: "आपके लिए कौन सी तारीख और समय सबसे सही रहेगा?"
+
+चरण 4 — परामर्श का तरीका:
+- प्रॉम्प्ट: "क्या आप क्लिनिक जाकर दिखाना चाहते हैं या ऑनलाइन परामर्श लेना चाहते हैं?"
+
+चरण 5 — पुष्टि:
+- सभी विवरण सारांशित करें और पुष्टि मांगें:
+  "मैंने [Location] में [Date/Time] के लिए [Doctor Type] का अपॉइंटमेंट तय किया है। क्या मैं इसे कन्फर्म कर दूं?"
+
+जब उपयोगकर्ता पुष्टि करें (जैसे: "हाँ", "कन्फर्म करो", "ठीक है", "yes"):
+- गर्मजोशी से स्वीकार करें: "आपका [Doctor Type] का अपॉइंटमेंट [Location] में [Date/Time] पर ([mode]) सफलतापूर्वक कन्फर्म हो गया है! क्या मैं आपकी और कोई मदद कर सकता हूँ?"
+
+### बिल भुगतान फ्लो:
+जब उपयोगकर्ता बिल भरना चाहें (जैसे: "बिजली का बिल भरना है", "मोबाइल रिचार्ज करना है", "bill pay karna hai"), तो इस क्रमिक प्रश्नावली का पालन करें।
+
+केवल एक प्रश्न एक बार में पूछें:
+
+चरण 1 — बिल की श्रेणी (यदि बताई न हो):
+- प्रॉम्प्ट: "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज)"
+
+चरण 2 — खाता विवरण:
+- बिजली के लिए: "कृपया अपना उपभोक्ता आईडी (Consumer ID) बताएं।"
+- पानी के लिए: "कृपया अपना वाटर मीटर नंबर बताएं।"
+- मोबाइल रिचार्ज के लिए: "आप किस मोबाइल नंबर पर रिचार्ज करना चाहते हैं?"
+
+चरण 3 — सेवा प्रदाता और राशि:
+- प्रॉम्प्ट: "आपकी कंपनी का नाम क्या है और आप कितने रुपये का भुगतान करना चाहते हैं?"
+
+चरण 4 — पुष्टि:
+- स्पष्ट रूप से सारांश दें:
+  "मैं आपके [Bill Type] के लिए ₹[Amount] का भुगतान करने जा रहा हूं ([Provider], ID: [Account ID])। क्या मैं आगे बढ़ूं?"
+
+जब उपयोगकर्ता पुष्टि करें (जैसे: "हाँ", "आगे बढ़ो", "yes"):
+- गर्मजोशी से स्वीकार करें: "आपका ₹[Amount] का [Bill Type] भुगतान ([Provider]) सफलतापूर्वक हो गया! क्या मैं आपकी और कोई मदद कर सकता हूँ?"
+
+### पिछले भुगतान से संबंधित प्रश्नों के लिए:
+यदि उपयोगकर्ता पिछले बिल के बारे में पूछें, तो इस प्रारूप में उत्तर दें:
+"आपका आखिरी बिजली का बिल ₹1,450 था, जो 10 अगस्त को सफलतापूर्वक भरा गया था।"
+
+### बातचीत के नियम:
+- एक बार में केवल एक प्रश्न पूछें।
+- यदि उपयोगकर्ता एक ही संदेश में कई विवरण दें, तो उन्हें छोड़ दें और केवल लापता जानकारी मांगें।
+- उत्तर छोटे, सहानुभूतिपूर्ण और आसान रखें।
+- कभी भी तकनीकी जानकारी (HTTP कोड, JSON त्रुटियाँ) न दिखाएं।
+- कभी भी markdown फ़ॉर्मेटिंग (asterisks, bullet points) का उपयोग न करें।
+
+### ज्ञात इरादे:
+BOOK_APPOINTMENT, PAY_BILL, FILL_FORM, EXPLAIN_TERM, ASK_QUESTION, EMERGENCY_HELP, VOCAL_ANCHOR, REPAIR, GENERAL
+
+आपको ONLY valid JSON इस schema में वापस करना MUST है:
+{
+  "intent": "PAY_BILL",
+  "goal": "लक्ष्य का संक्षिप्त विवरण",
+  "response": "आपका मुख्य बोला जाने वाला उत्तर (सादा पाठ, markdown नहीं)",
+  "needs_clarification": true या false,
+  "clarifying_question": "यदि जानकारी मांगनी है तो एकल प्रश्न, अन्यथा null",
+  "suggested_next_step": "उपयोगकर्ता के लिए छोटी सहायक युक्ति या null",
+  "helpful_tip": "वैकल्पिक सुरक्षा या तैयारी युक्ति या null"
+}
+    """.trimIndent()
 
     // ------------------------------------------------------------------
     // Response Parsing
@@ -270,14 +356,15 @@ You MUST return ONLY valid JSON matching this schema:
     private fun parseGeminiResponse(
         responseBody: String,
         transcript: String,
-        conversation: List<ConversationMessage>
+        conversation: List<ConversationMessage>,
+        userLanguage: String = "English"
     ): AssistantResponse {
         return try {
             val root = gson.fromJson(responseBody, JsonObject::class.java)
 
             val candidates = root.getAsJsonArray("candidates")
             if (candidates == null || candidates.size() == 0) {
-                return handleParseFallback(transcript, conversation)
+                return handleParseFallback(transcript, conversation, userLanguage)
             }
 
             val firstCandidate = candidates.get(0)?.asJsonObject
@@ -286,20 +373,21 @@ You MUST return ONLY valid JSON matching this schema:
             val text = parts?.get(0)?.asJsonObject?.get("text")?.asString
 
             if (text.isNullOrBlank()) {
-                return handleParseFallback(transcript, conversation)
+                return handleParseFallback(transcript, conversation, userLanguage)
             }
 
-            parseStructuredResponse(text.trim(), transcript, conversation)
+            parseStructuredResponse(text.trim(), transcript, conversation, userLanguage)
         } catch (e: Exception) {
             Log.e("GeminiLlmService", "Failed to parse Gemini response", e)
-            handleParseFallback(transcript, conversation)
+            handleParseFallback(transcript, conversation, userLanguage)
         }
     }
 
     private fun parseStructuredResponse(
         jsonText: String,
         transcript: String,
-        conversation: List<ConversationMessage>
+        conversation: List<ConversationMessage>,
+        userLanguage: String = "English"
     ): AssistantResponse {
         return try {
             var cleaned = jsonText.trim()
@@ -318,6 +406,7 @@ You MUST return ONLY valid JSON matching this schema:
             val obj = gson.fromJson(cleaned, JsonObject::class.java)
 
             val intent = obj.get("intent")?.asString ?: "GENERAL"
+            val isHindi = userLanguage.contains("Hindi") || userLanguage.contains("हिंदी")
 
             val responseText = obj.get("response")
                 ?.takeIf { !it.isJsonNull }
@@ -336,10 +425,17 @@ You MUST return ONLY valid JSON matching this schema:
                     ?.asBoolean
                     ?: false
 
+            // Bilingual default prompts for when Gemini returns an empty response field
             val defaultPrompt = when (intent) {
-                "PAY_BILL" -> "Which bill would you like to pay? (Electricity, Water, or Mobile Recharge)"
-                "BOOK_APPOINTMENT" -> "Which type of doctor would you like to book? (e.g., General Physician, Dermatologist, Cardiologist)"
-                else -> "How may I help you today?"
+                "PAY_BILL" -> if (isHindi)
+                    "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज)"
+                else
+                    "Which bill would you like to pay? (Electricity, Water, or Mobile Recharge)"
+                "BOOK_APPOINTMENT" -> if (isHindi)
+                    "आप किस तरह के डॉक्टर से अपॉइंटमेंट लेना चाहते हैं? (जैसे: सामान्य डॉक्टर, त्वचा विशेषज्ञ, या हृदय रोग विशेषज्ञ)"
+                else
+                    "Which type of doctor would you like to book? (e.g., General Physician, Dermatologist, Cardiologist)"
+                else -> if (isHindi) "मैं आपकी कैसे मदद कर सकता हूँ?" else "How may I help you today?"
             }
 
             val finalResponse = when {
@@ -365,23 +461,32 @@ You MUST return ONLY valid JSON matching this schema:
             )
         } catch (e: Exception) {
             Log.e("GeminiLlmService", "Error in parseStructuredResponse", e)
-            handleParseFallback(transcript, conversation)
+            handleParseFallback(transcript, conversation, userLanguage)
         }
     }
 
-    private fun handleParseFallback(transcript: String, conversation: List<ConversationMessage>): AssistantResponse {
+    private fun handleParseFallback(
+        transcript: String,
+        conversation: List<ConversationMessage>,
+        userLanguage: String = "English"
+    ): AssistantResponse {
+        val isHindi = userLanguage.contains("Hindi") || userLanguage.contains("हिंदी")
         if (DoctorBookingManager.isDoctorBookingIntent(transcript, conversation)) {
             val state = DoctorBookingManager.extractState(conversation, transcript)
-            return DoctorBookingManager.getNextStepResponse(state)
+            return DoctorBookingManager.getNextStepResponse(state, userLanguage)
         }
         if (BillPaymentManager.isBillPaymentIntent(transcript, conversation)) {
             val state = BillPaymentManager.extractState(conversation, transcript)
-            return BillPaymentManager.getNextStepResponse(state)
+            return BillPaymentManager.getNextStepResponse(state, userLanguage)
         }
+        val generalMsg = if (isHindi)
+            "मैं समझ गया। क्या आप थोड़ा और बता सकते हैं?"
+        else
+            "I understood your request. Could you please tell me a little more?"
         return AssistantResponse(
             intent = "GENERAL",
             goal = "",
-            response = "I understood your request. Could you please tell me a little more?"
+            response = generalMsg
         )
     }
 

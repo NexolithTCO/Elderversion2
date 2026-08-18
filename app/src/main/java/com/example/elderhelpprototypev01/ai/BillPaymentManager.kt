@@ -30,11 +30,15 @@ object BillPaymentManager {
     )
 
     private val BILL_PAYMENT_INTENT_KEYWORDS = listOf(
+        // English keywords
         "pay bill", "pay my bill", "pay bills", "bill payment",
         "recharge", "recharge my phone", "recharge phone", "recharge mobile", "mobile recharge",
         "phone recharge", "electricity bill", "water bill", "bijli bill", "light bill",
         "current bill", "phone bill", "pay electricity", "pay water", "pay mobile",
-        "electricity payment", "water payment", "mobile payment"
+        "electricity payment", "water payment", "mobile payment",
+        // Hindi keywords
+        "बिल भरना", "बिजली का बिल", "पानी का बिल", "मोबाइल रिचार्ज", "रिचार्ज करना",
+        "बिल का भुगतान", "बिल पे करना", "बिजली बिल", "भुगतान करना"
     )
 
     /**
@@ -57,7 +61,14 @@ object BillPaymentManager {
                 lastAssistantMsg.contains("service provider or operator") ||
                 lastAssistantMsg.contains("how much amount would you like to pay") ||
                 lastAssistantMsg.contains("should i proceed to payment") ||
-                lastAssistantMsg.contains("set up a payment of")
+                lastAssistantMsg.contains("set up a payment of") ||
+                // Hindi assistant question patterns
+                lastAssistantMsg.contains("कौन सा बिल") ||
+                lastAssistantMsg.contains("उपभोक्ता आईडी") ||
+                lastAssistantMsg.contains("वाटर मीटर नंबर") ||
+                lastAssistantMsg.contains("मोबाइल नंबर पर रिचार्ज") ||
+                lastAssistantMsg.contains("कंपनी का नाम") ||
+                lastAssistantMsg.contains("आगे बढ़ूं")
             ) {
                 return true
             }
@@ -207,8 +218,17 @@ object BillPaymentManager {
 
     /**
      * Generates the next question or confirmation response in the exact 5-step sequence.
+     *
+     * @param state        Current payment state extracted from the conversation.
+     * @param userLanguage Language preference from the ViewModel (e.g. "Hindi (हिंदी)").
+     *                     When Hindi is active, all step prompts are returned in Hindi.
      */
-    fun getNextStepResponse(state: PaymentFlowState): AssistantResponse {
+    fun getNextStepResponse(state: PaymentFlowState, userLanguage: String = "English"): AssistantResponse {
+        val isHindi = userLanguage.contains("Hindi") || userLanguage.contains("हिंदी")
+        return if (isHindi) getNextStepResponseHindi(state) else getNextStepResponseEnglish(state)
+    }
+
+    private fun getNextStepResponseEnglish(state: PaymentFlowState): AssistantResponse {
         return when {
             // Step 1: Bill Category / Type (if not specified)
             state.billType == null -> {
@@ -297,6 +317,103 @@ object BillPaymentManager {
                     clarifyingQuestion = null,
                     suggestedNextStep = "You can ask to book a doctor appointment or pay another bill.",
                     helpfulTip = "The payment receipt has been recorded in your Sahaay history."
+                )
+            }
+        }
+    }
+
+    private fun getNextStepResponseHindi(state: PaymentFlowState): AssistantResponse {
+        return when {
+            // चरण 1: बिल की श्रेणी
+            state.billType == null -> {
+                AssistantResponse(
+                    intent = "PAY_BILL",
+                    goal = "बिल श्रेणी पूछें",
+                    response = "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज)",
+                    needsClarification = true,
+                    clarifyingQuestion = "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज)",
+                    suggestedNextStep = "बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज बोलें।"
+                )
+            }
+
+            // चरण 2: खाता विवरण
+            state.accountId == null -> {
+                val (question, hint) = when (state.billType!!) {
+                    BillType.ELECTRICITY ->
+                        "कृपया अपना उपभोक्ता आईडी (Consumer ID) बताएं।" to "अपना बिजली उपभोक्ता आईडी बोलें।"
+                    BillType.WATER ->
+                        "कृपया अपना वाटर मीटर नंबर बताएं।" to "अपना पानी का मीटर नंबर बोलें।"
+                    BillType.MOBILE ->
+                        "आप किस मोबाइल नंबर पर रिचार्ज करना चाहते हैं?" to "अपना 10 अंकों का मोबाइल नंबर बोलें।"
+                }
+                AssistantResponse(
+                    intent = "PAY_BILL",
+                    goal = "खाता विवरण पूछें",
+                    response = question,
+                    needsClarification = true,
+                    clarifyingQuestion = question,
+                    suggestedNextStep = hint
+                )
+            }
+
+            // चरण 3: सेवा प्रदाता और राशि
+            state.provider == null -> {
+                AssistantResponse(
+                    intent = "PAY_BILL",
+                    goal = "सेवा प्रदाता पूछें",
+                    response = "आपकी कंपनी का नाम क्या है और आप कितने रुपये का भुगतान करना चाहते हैं?",
+                    needsClarification = true,
+                    clarifyingQuestion = "आपकी कंपनी का नाम क्या है और आप कितने रुपये का भुगतान करना चाहते हैं?",
+                    suggestedNextStep = "अपनी बिजली या मोबाइल कंपनी का नाम और भुगतान राशि बताएं।"
+                )
+            }
+
+            // चरण 4: राशि (यदि provider के साथ amount नहीं मिली)
+            state.amount == null -> {
+                AssistantResponse(
+                    intent = "PAY_BILL",
+                    goal = "भुगतान राशि पूछें",
+                    response = "आप कितने रुपये का भुगतान करना चाहते हैं?",
+                    needsClarification = true,
+                    clarifyingQuestion = "आप कितने रुपये का भुगतान करना चाहते हैं?",
+                    suggestedNextStep = "भुगतान राशि बताएं, जैसे 500 रुपये।"
+                )
+            }
+
+            // चरण 5: पुष्टि
+            !state.isConfirmed -> {
+                val billTypeTitle = when (state.billType!!) {
+                    BillType.ELECTRICITY -> "बिजली बिल"
+                    BillType.WATER -> "पानी का बिल"
+                    BillType.MOBILE -> "मोबाइल रिचार्ज"
+                }
+                val summary = "मैं आपके $billTypeTitle के लिए ₹${state.amount} का भुगतान करने जा रहा हूं (${state.provider}, ID: ${state.accountId})। क्या मैं आगे बढ़ूं?"
+                AssistantResponse(
+                    intent = "PAY_BILL",
+                    goal = "भुगतान विवरण की पुष्टि करें",
+                    response = summary,
+                    needsClarification = true,
+                    clarifyingQuestion = summary,
+                    suggestedNextStep = "भुगतान के लिए 'हाँ' बोलें, या यदि कोई बदलाव चाहते हैं तो बताएं।"
+                )
+            }
+
+            // पूर्ण / कन्फर्म
+            else -> {
+                val billTypeTitle = when (state.billType!!) {
+                    BillType.ELECTRICITY -> "बिजली बिल"
+                    BillType.WATER -> "पानी का बिल"
+                    BillType.MOBILE -> "मोबाइल रिचार्ज"
+                }
+                val confirmedMsg = "आपका ₹${state.amount} का $billTypeTitle भुगतान (${state.provider}) सफलतापूर्वक हो गया! क्या मैं आपकी और कोई मदद कर सकता हूँ?"
+                AssistantResponse(
+                    intent = "PAY_BILL",
+                    goal = "भुगतान पूर्ण",
+                    response = confirmedMsg,
+                    needsClarification = false,
+                    clarifyingQuestion = null,
+                    suggestedNextStep = "आप कोई और बिल भर सकते हैं या डॉक्टर का अपॉइंटमेंट बुक कर सकते हैं।",
+                    helpfulTip = "भुगतान की रसीद आपके Sahaay इतिहास में दर्ज हो गई है।"
                 )
             }
         }
