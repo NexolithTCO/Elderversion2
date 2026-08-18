@@ -33,12 +33,13 @@ object BillPaymentManager {
         // English keywords
         "pay bill", "pay my bill", "pay bills", "bill payment",
         "recharge", "recharge my phone", "recharge phone", "recharge mobile", "mobile recharge",
-        "phone recharge", "electricity bill", "water bill", "bijli bill", "light bill",
-        "current bill", "phone bill", "pay electricity", "pay water", "pay mobile",
-        "electricity payment", "water payment", "mobile payment",
+        "phone recharge", "electricity bill", "water bill", "gas bill", "bijli bill", "light bill",
+        "current bill", "phone bill", "pay electricity", "pay water", "pay mobile", "pay gas",
+        "electricity payment", "water payment", "mobile payment", "gas payment",
+        "lpg", "cylinder", "piped gas", "mahanagar gas", "igl", "hp gas", "bharat gas", "indane",
         // Hindi keywords
-        "बिल भरना", "बिजली का बिल", "पानी का बिल", "मोबाइल रिचार्ज", "रिचार्ज करना",
-        "बिल का भुगतान", "बिल पे करना", "बिजली बिल", "भुगतान करना"
+        "बिल भरना", "बिजली का बिल", "पानी का बिल", "गैस बिल", "गैस का बिल", "मोबाइल रिचार्ज", "रिचार्ज करना",
+        "बिल का भुगतान", "बिल पे करना", "बिजली बिल", "भुगतान करना", "गैस", "सिलेंडर", "एलपीजी"
     )
 
     /**
@@ -57,6 +58,9 @@ object BillPaymentManager {
                 lastAssistantMsg.contains("consumer or account id") ||
                 lastAssistantMsg.contains("water consumer / meter number") ||
                 lastAssistantMsg.contains("water consumer") ||
+                lastAssistantMsg.contains("consumer number or lpg id") ||
+                lastAssistantMsg.contains("gas provider") ||
+                lastAssistantMsg.contains("which gas provider") ||
                 lastAssistantMsg.contains("mobile number would you like to recharge") ||
                 lastAssistantMsg.contains("service provider or operator") ||
                 lastAssistantMsg.contains("how much amount would you like to pay") ||
@@ -66,6 +70,10 @@ object BillPaymentManager {
                 lastAssistantMsg.contains("कौन सा बिल") ||
                 lastAssistantMsg.contains("उपभोक्ता आईडी") ||
                 lastAssistantMsg.contains("वाटर मीटर नंबर") ||
+                lastAssistantMsg.contains("कंज्यूमर नंबर") ||
+                lastAssistantMsg.contains("एलपीजी आईडी") ||
+                lastAssistantMsg.contains("गैस कंपनी") ||
+                lastAssistantMsg.contains("गैस प्रदाता") ||
                 lastAssistantMsg.contains("मोबाइल नंबर पर रिचार्ज") ||
                 lastAssistantMsg.contains("कंपनी का नाम") ||
                 lastAssistantMsg.contains("आगे बढ़ूं")
@@ -101,9 +109,10 @@ object BillPaymentManager {
         val lower = text.lowercase(Locale.ROOT).trim()
 
         // 1. Confirmation check
-        if (lastQuestion.contains("should i proceed to payment") || lastQuestion.contains("proceed to payment")) {
+        if (lastQuestion.contains("should i proceed to payment") || lastQuestion.contains("proceed to payment") || lastQuestion.contains("आगे बढ़ूं")) {
             if (lower.contains("yes") || lower.contains("proceed") || lower.contains("sure") ||
                 lower.contains("confirm") || lower.contains("ha") || lower.contains("haa") ||
+                lower.contains("haan") || lower.contains("हाँ") || lower.contains("हां") ||
                 lower.contains("yep") || lower.contains("ok") || lower.contains("okay") ||
                 lower.contains("pay") || lower.contains("correct") || lower.contains("do it")
             ) {
@@ -115,6 +124,11 @@ object BillPaymentManager {
         // 2. Bill Type Extraction
         if (state.billType == null) {
             when {
+                lower.contains("gas") || lower.contains("lpg") || lower.contains("cylinder") ||
+                        lower.contains("piped") || lower.contains("गैस") || lower.contains("सिलेंडर") ||
+                        lower.contains("mahanagar gas") || lower.contains("igl") || lower.contains("indane") -> {
+                    state.billType = BillType.GAS
+                }
                 lower.contains("electricity") || lower.contains("bijli") || lower.contains("power") ||
                         lower.contains("light bill") || lower.contains("current bill") -> {
                     state.billType = BillType.ELECTRICITY
@@ -126,13 +140,15 @@ object BillPaymentManager {
                         lower.contains("sim") || lower.contains("prepaid") || lower.contains("postpaid") -> {
                     state.billType = BillType.MOBILE
                 }
-                lastQuestion.contains("which bill would you like to pay") -> {
-                    if (lower.contains("first") || lower.contains("electric")) {
+                lastQuestion.contains("which bill would you like to pay") || lastQuestion.contains("कौन सा बिल") -> {
+                    if (lower.contains("first") || lower.contains("electric") || lower.contains("बिजली")) {
                         state.billType = BillType.ELECTRICITY
-                    } else if (lower.contains("second") || lower.contains("water")) {
+                    } else if (lower.contains("second") || lower.contains("water") || lower.contains("पानी")) {
                         state.billType = BillType.WATER
-                    } else if (lower.contains("third") || lower.contains("mobile") || lower.contains("recharge")) {
+                    } else if (lower.contains("third") || lower.contains("mobile") || lower.contains("recharge") || lower.contains("मोबाइल")) {
                         state.billType = BillType.MOBILE
+                    } else if (lower.contains("fourth") || lower.contains("gas") || lower.contains("गैस")) {
+                        state.billType = BillType.GAS
                     }
                 }
             }
@@ -140,6 +156,13 @@ object BillPaymentManager {
 
         // 3. Provider Extraction
         when {
+            lower.contains("mahanagar gas") || lower.contains("mgl") || lower.contains("महानगर गैस") -> state.provider = "Mahanagar Gas"
+            lower.contains("igl") || lower.contains("indraprastha gas") || lower.contains("आईजीएल") -> state.provider = "Indraprastha Gas (IGL)"
+            lower.contains("hp gas") || lower.contains("एचपी गैस") || lower.contains("hindustan petroleum") -> state.provider = "HP Gas"
+            lower.contains("bharat gas") || lower.contains("भारत गैस") || lower.contains("bpcl") -> state.provider = "Bharat Gas"
+            lower.contains("indane") || lower.contains("इंडेन") || lower.contains("indian oil") -> state.provider = "Indane Gas"
+            lower.contains("adani gas") || lower.contains("adani total gas") || (lower.contains("adani") && state.billType == BillType.GAS) -> state.provider = "Adani Total Gas"
+            lower.contains("gujarat gas") -> state.provider = "Gujarat Gas"
             lower.contains("adani electricity") || lower.contains("adani") -> state.provider = "Adani Electricity"
             lower.contains("tata power") || (lower.contains("tata") && state.billType == BillType.ELECTRICITY) -> state.provider = "Tata Power"
             lower.contains("msedcl") || lower.contains("mahadiscom") -> state.provider = "MSEDCL"
@@ -153,9 +176,10 @@ object BillPaymentManager {
             lower.contains("delhi jal board") -> state.provider = "Delhi Jal Board"
             lower.contains("bmc") -> state.provider = "Municipal Corporation (BMC)"
             lower.contains("water board") || lower.contains("jal board") -> state.provider = "Municipal Corporation Water Board"
-            lastQuestion.contains("service provider or operator") || lastQuestion.contains("who is your service provider") -> {
-                val cleaned = text.replace(Regex("(?i)^(my provider is|it is|operator is|provider is|is|the provider is)\\s+"), "").trim()
-                if (cleaned.isNotBlank() && !cleaned.contains("rupees", ignoreCase = true) && !cleaned.contains("rs", ignoreCase = true)) {
+            lastQuestion.contains("service provider or operator") || lastQuestion.contains("who is your service provider") ||
+                    lastQuestion.contains("which gas provider") || lastQuestion.contains("गैस कंपनी") || lastQuestion.contains("कंपनी का नाम") -> {
+                val cleaned = text.replace(Regex("(?i)^(my provider is|it is|operator is|provider is|is|the provider is|my gas provider is|गैस कंपनी है|कंपनी है)\\s+"), "").trim()
+                if (cleaned.isNotBlank() && !cleaned.contains("rupees", ignoreCase = true) && !cleaned.contains("rs", ignoreCase = true) && !cleaned.contains("रुपये")) {
                     state.provider = cleaned.capitalizeWords()
                 }
             }
@@ -179,21 +203,26 @@ object BillPaymentManager {
                 }
             } else if (lastQuestion.contains("consumer or account id") ||
                 lastQuestion.contains("water consumer / meter number") ||
+                lastQuestion.contains("consumer number or lpg id") ||
                 lastQuestion.contains("consumer") ||
-                lastQuestion.contains("account id")
+                lastQuestion.contains("account id") ||
+                lastQuestion.contains("कंज्यूमर नंबर") ||
+                lastQuestion.contains("उपभोक्ता आईडी") ||
+                lastQuestion.contains("एलपीजी आईडी")
             ) {
-                val cleaned = text.replace(Regex("(?i)^(my id is|my consumer id is|my account id is|my number is|it is|id is|number is)\\s+"), "").trim()
-                if (cleaned.isNotBlank() && !cleaned.contains("adani", ignoreCase = true) && !cleaned.contains("jio", ignoreCase = true)) {
+                val cleaned = text.replace(Regex("(?i)^(my id is|my consumer id is|my account id is|my number is|it is|id is|number is|consumer number is|lpg id is|मेरा नंबर है|आईडी है)\\s+"), "").trim()
+                if (cleaned.isNotBlank() && !cleaned.contains("adani", ignoreCase = true) && !cleaned.contains("jio", ignoreCase = true) && !cleaned.contains("mahanagar", ignoreCase = true)) {
                     state.accountId = cleaned
                 }
             } else {
-                // Generic ID pattern like WB-8839201 or 102938475
-                val idMatch = Regex("(?i)\\b(id|consumer|meter|account)?\\s*[:#]?\\s*([A-Z0-9\\-]{6,15})\\b").find(text)
+                // Generic ID pattern like WB-8839201 or 102938475 or 16-digit LPG ID
+                val idMatch = Regex("(?i)\\b(id|consumer|meter|account|lpg)?\\s*[:#]?\\s*([A-Z0-9\\-]{6,17})\\b").find(text)
                 if (idMatch != null) {
                     val candidate = idMatch.groupValues[2]
                     if (!candidate.equals("electricity", ignoreCase = true) &&
                         !candidate.equals("recharge", ignoreCase = true) &&
-                        !candidate.equals("tomorrow", ignoreCase = true)
+                        !candidate.equals("tomorrow", ignoreCase = true) &&
+                        !candidate.equals("mahanagar", ignoreCase = true)
                     ) {
                         state.accountId = candidate
                     }
@@ -203,11 +232,11 @@ object BillPaymentManager {
 
         // 5. Amount Extraction
         if (state.amount == null) {
-            val amountRegex = Regex("(?i)(?:₹|rs\\.?|rupees|amount|for)\\s*(\\d+(?:\\.\\d{1,2})?)|(\\d+(?:\\.\\d{1,2})?)\\s*(?:₹|rs\\.?|rupees)")
+            val amountRegex = Regex("(?i)(?:₹|rs\\.?|rupees|रुपये|amount|for)\\s*(\\d+(?:\\.\\d{1,2})?)|(\\d+(?:\\.\\d{1,2})?)\\s*(?:₹|rs\\.?|rupees|रुपये)")
             val match = amountRegex.find(text)
             if (match != null) {
                 state.amount = (match.groups[1] ?: match.groups[2])?.value
-            } else if (lastQuestion.contains("how much amount") || lastQuestion.contains("amount would you like to pay")) {
+            } else if (lastQuestion.contains("how much amount") || lastQuestion.contains("amount would you like to pay") || lastQuestion.contains("कितने रुपये")) {
                 val digits = text.filter { it.isDigit() || it == '.' }
                 if (digits.isNotBlank()) {
                     state.amount = digits
@@ -235,10 +264,10 @@ object BillPaymentManager {
                 AssistantResponse(
                     intent = "PAY_BILL",
                     goal = "Ask bill category",
-                    response = "Which bill would you like to pay? (Electricity, Water, or Mobile Recharge)",
+                    response = "Which bill would you like to pay? (Electricity, Water, Mobile Recharge, or Gas Bill)",
                     needsClarification = true,
-                    clarifyingQuestion = "Which bill would you like to pay? (Electricity, Water, or Mobile Recharge)",
-                    suggestedNextStep = "Say Electricity, Water, or Mobile Recharge."
+                    clarifyingQuestion = "Which bill would you like to pay? (Electricity, Water, Mobile Recharge, or Gas Bill)",
+                    suggestedNextStep = "Say Electricity, Water, Mobile Recharge, or Gas Bill."
                 )
             }
 
@@ -248,6 +277,7 @@ object BillPaymentManager {
                     BillType.ELECTRICITY -> "Please tell me your Consumer or Account ID." to "Say your electricity consumer or account ID."
                     BillType.WATER -> "Please tell me your Water Consumer / Meter Number." to "Say your water consumer or meter number."
                     BillType.MOBILE -> "Which mobile number would you like to recharge?" to "Say your 10-digit mobile number."
+                    BillType.GAS -> "Please tell me your Consumer Number or LPG ID." to "Say your Consumer Number or LPG ID."
                 }
                 AssistantResponse(
                     intent = "PAY_BILL",
@@ -261,13 +291,21 @@ object BillPaymentManager {
 
             // Step 3: Provider / Operator (if applicable)
             state.provider == null -> {
+                val prompt = when (state.billType!!) {
+                    BillType.GAS -> "Which gas provider do you use? (e.g., Mahanagar Gas, IGL, HP Gas)"
+                    else -> "Who is your service provider or operator? (e.g., Adani Electricity, Tata Power, Jio, Airtel)"
+                }
+                val hint = when (state.billType!!) {
+                    BillType.GAS -> "Say Mahanagar Gas, IGL, HP Gas, Bharat Gas, or Indane."
+                    else -> "Say your service provider or telecom operator."
+                }
                 AssistantResponse(
                     intent = "PAY_BILL",
                     goal = "Ask service provider",
-                    response = "Who is your service provider or operator? (e.g., Adani Electricity, Tata Power, Jio, Airtel)",
+                    response = prompt,
                     needsClarification = true,
-                    clarifyingQuestion = "Who is your service provider or operator? (e.g., Adani Electricity, Tata Power, Jio, Airtel)",
-                    suggestedNextStep = "Say your service provider or telecom operator."
+                    clarifyingQuestion = prompt,
+                    suggestedNextStep = hint
                 )
             }
 
@@ -289,6 +327,7 @@ object BillPaymentManager {
                     BillType.ELECTRICITY -> "Electricity Bill"
                     BillType.WATER -> "Water Bill"
                     BillType.MOBILE -> "Mobile Recharge"
+                    BillType.GAS -> "Gas Bill"
                 }
                 val summary = "I have set up a payment of ₹${state.amount} for your $billTypeTitle (${state.provider}, ID: ${state.accountId}). Should I proceed to payment?"
                 AssistantResponse(
@@ -307,6 +346,7 @@ object BillPaymentManager {
                     BillType.ELECTRICITY -> "Electricity Bill"
                     BillType.WATER -> "Water Bill"
                     BillType.MOBILE -> "Mobile Recharge"
+                    BillType.GAS -> "Gas Bill"
                 }
                 val confirmedMsg = "Your payment of ₹${state.amount} for $billTypeTitle (${state.provider}) has been processed successfully! Is there anything else I can help you with?"
                 AssistantResponse(
@@ -329,10 +369,10 @@ object BillPaymentManager {
                 AssistantResponse(
                     intent = "PAY_BILL",
                     goal = "बिल श्रेणी पूछें",
-                    response = "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज)",
+                    response = "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, मोबाइल रिचार्ज, या गैस बिल)",
                     needsClarification = true,
-                    clarifyingQuestion = "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज)",
-                    suggestedNextStep = "बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज बोलें।"
+                    clarifyingQuestion = "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, मोबाइल रिचार्ज, या गैस बिल)",
+                    suggestedNextStep = "बिजली बिल, पानी का बिल, मोबाइल रिचार्ज, या गैस बिल बोलें।"
                 )
             }
 
@@ -345,6 +385,8 @@ object BillPaymentManager {
                         "कृपया अपना वाटर मीटर नंबर बताएं।" to "अपना पानी का मीटर नंबर बोलें।"
                     BillType.MOBILE ->
                         "आप किस मोबाइल नंबर पर रिचार्ज करना चाहते हैं?" to "अपना 10 अंकों का मोबाइल नंबर बोलें।"
+                    BillType.GAS ->
+                        "कृपया अपना कंज्यूमर नंबर या एलपीजी आईडी बताएं।" to "अपना गैस उपभोक्ता नंबर या एलपीजी आईडी बताएं।"
                 }
                 AssistantResponse(
                     intent = "PAY_BILL",
@@ -358,13 +400,19 @@ object BillPaymentManager {
 
             // चरण 3: सेवा प्रदाता और राशि
             state.provider == null -> {
+                val (question, hint) = when (state.billType!!) {
+                    BillType.GAS ->
+                        "आपकी गैस कंपनी कौन सी है? (जैसे: महानगर गैस, एचपी गैस)" to "महानगर गैस, एचपी गैस, भारत गैस या इंडेन बताएं।"
+                    else ->
+                        "आपकी कंपनी का नाम क्या है और आप कितने रुपये का भुगतान करना चाहते हैं?" to "अपनी कंपनी का नाम और भुगतान राशि बताएं।"
+                }
                 AssistantResponse(
                     intent = "PAY_BILL",
                     goal = "सेवा प्रदाता पूछें",
-                    response = "आपकी कंपनी का नाम क्या है और आप कितने रुपये का भुगतान करना चाहते हैं?",
+                    response = question,
                     needsClarification = true,
-                    clarifyingQuestion = "आपकी कंपनी का नाम क्या है और आप कितने रुपये का भुगतान करना चाहते हैं?",
-                    suggestedNextStep = "अपनी बिजली या मोबाइल कंपनी का नाम और भुगतान राशि बताएं।"
+                    clarifyingQuestion = question,
+                    suggestedNextStep = hint
                 )
             }
 
@@ -386,6 +434,7 @@ object BillPaymentManager {
                     BillType.ELECTRICITY -> "बिजली बिल"
                     BillType.WATER -> "पानी का बिल"
                     BillType.MOBILE -> "मोबाइल रिचार्ज"
+                    BillType.GAS -> "गैस बिल"
                 }
                 val summary = "मैं आपके $billTypeTitle के लिए ₹${state.amount} का भुगतान करने जा रहा हूं (${state.provider}, ID: ${state.accountId})। क्या मैं आगे बढ़ूं?"
                 AssistantResponse(
@@ -404,6 +453,7 @@ object BillPaymentManager {
                     BillType.ELECTRICITY -> "बिजली बिल"
                     BillType.WATER -> "पानी का बिल"
                     BillType.MOBILE -> "मोबाइल रिचार्ज"
+                    BillType.GAS -> "गैस बिल"
                 }
                 val confirmedMsg = "आपका ₹${state.amount} का $billTypeTitle भुगतान (${state.provider}) सफलतापूर्वक हो गया! क्या मैं आपकी और कोई मदद कर सकता हूँ?"
                 AssistantResponse(

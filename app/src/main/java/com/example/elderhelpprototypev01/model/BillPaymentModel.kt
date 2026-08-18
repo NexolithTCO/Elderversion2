@@ -31,6 +31,14 @@ enum class BillType(
         defaultProvider = "Jio Prepaid",
         sampleIdentifier = "9876512345",
         defaultAmount = "299"
+    ),
+    GAS(
+        title = "Gas Bill",
+        iconEmoji = "🔥",
+        fieldLabel = "Consumer Number / LPG ID",
+        defaultProvider = "Mahanagar Gas",
+        sampleIdentifier = "901238475",
+        defaultAmount = "680"
     )
 }
 

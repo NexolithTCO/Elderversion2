@@ -39,6 +39,9 @@ import java.util.Locale
  * 1. ⚡ Electricity Bill
  * 2. 💧 Water Bill
  * 3. 📱 Mobile Recharge
+ * 4. 🔥 Gas Bill (Piped Gas / LPG Cylinder)
+ *
+ * All 4 cards have identical dimensions, flex weighting, padding, and visual structure.
  */
 @Composable
 fun PayBillsSection(
@@ -71,34 +74,54 @@ fun PayBillsSection(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 3 Distinct Category Cards
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        // 4 Uniform Category Cards in a 2x2 Balanced Grid
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            BillCategoryCard(
-                type = BillType.ELECTRICITY,
-                color = Color(0xFFFFF8E1),
-                borderColor = Color(0xFFFFB300),
-                onClick = { onCategoryClick(BillType.ELECTRICITY) },
-                modifier = Modifier.weight(1f)
-            )
-            BillCategoryCard(
-                type = BillType.WATER,
-                color = Color(0xFFE1F5FE),
-                borderColor = Color(0xFF0288D1),
-                onClick = { onCategoryClick(BillType.WATER) },
-                modifier = Modifier.weight(1f)
-            )
-            BillCategoryCard(
-                type = BillType.MOBILE,
-                color = Color(0xFFF3E5F5),
-                borderColor = Color(0xFF8E24AA),
-                onClick = { onCategoryClick(BillType.MOBILE) },
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                BillCategoryCard(
+                    type = BillType.ELECTRICITY,
+                    color = Color(0xFFFFF8E1),
+                    borderColor = Color(0xFFFFB300),
+                    onClick = { onCategoryClick(BillType.ELECTRICITY) },
+                    modifier = Modifier.weight(1f)
+                )
+                BillCategoryCard(
+                    type = BillType.WATER,
+                    color = Color(0xFFE1F5FE),
+                    borderColor = Color(0xFF0288D1),
+                    onClick = { onCategoryClick(BillType.WATER) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                BillCategoryCard(
+                    type = BillType.MOBILE,
+                    color = Color(0xFFF3E5F5),
+                    borderColor = Color(0xFF8E24AA),
+                    onClick = { onCategoryClick(BillType.MOBILE) },
+                    modifier = Modifier.weight(1f)
+                )
+                BillCategoryCard(
+                    type = BillType.GAS,
+                    color = Color(0xFFFFF3E0),
+                    borderColor = Color(0xFFFF9800),
+                    onClick = { onCategoryClick(BillType.GAS) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
@@ -117,41 +140,41 @@ private fun BillCategoryCard(
         color = Color.White,
         shadowElevation = 2.dp,
         border = BorderStroke(1.dp, borderColor.copy(alpha = 0.4f)),
-        modifier = modifier
+        modifier = modifier.height(115.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .padding(vertical = 16.dp, horizontal = 10.dp),
+                .padding(vertical = 12.dp, horizontal = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
                     .background(color),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = type.iconEmoji, fontSize = 24.sp)
+                Text(text = type.iconEmoji, fontSize = 22.sp)
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = type.title.replace(" Bill", ""),
                 style = Typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = AppleTextPrimary,
-                    fontSize = 13.sp
+                    fontSize = 14.sp
                 ),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 maxLines = 1
             )
-            Spacer(modifier = Modifier.height(3.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "Pay Now",
+                text = if (type == BillType.GAS) "Piped / LPG" else "Pay Now",
                 style = Typography.labelSmall.copy(
                     color = AppleBlue,
                     fontWeight = FontWeight.Bold,
@@ -174,20 +197,41 @@ fun BillPaymentModal(
     initialIdentifier: String? = null,
     initialProvider: String? = null,
     initialAmount: String? = null,
+    userProfile: com.example.elderhelpprototypev01.model.UserProfile? = null,
     onDismiss: () -> Unit,
     onPaymentSuccess: (BillPayment) -> Unit
 ) {
-    var identifier by remember { mutableStateOf(initialIdentifier ?: billType.sampleIdentifier) }
-    var provider by remember { mutableStateOf(initialProvider ?: billType.defaultProvider) }
-    var amount by remember { mutableStateOf(initialAmount ?: billType.defaultAmount) }
-    var isProcessing by remember { mutableStateOf(false) }
-    var isPaid by remember { mutableStateOf(false) }
+    val defaultId: String = initialIdentifier ?: when (billType) {
+        BillType.MOBILE -> {
+            val digits = userProfile?.contactNumber?.filter { it.isDigit() }?.takeLast(10)
+            if (!digits.isNullOrBlank()) digits else billType.sampleIdentifier
+        }
+        else -> billType.sampleIdentifier
+    }
+
+    var identifier: String by remember(billType, initialIdentifier) { mutableStateOf(defaultId) }
+    var provider: String by remember(billType, initialProvider) { mutableStateOf(initialProvider ?: billType.defaultProvider) }
+    var amount: String by remember(billType, initialAmount) { mutableStateOf(initialAmount ?: billType.defaultAmount) }
+    var isProcessing: Boolean by remember { mutableStateOf(false) }
+    var isPaid: Boolean by remember { mutableStateOf(false) }
     var receiptPayment by remember { mutableStateOf<BillPayment?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-    val quickAmounts = listOf("299", "499", "1000", "1500", "2000")
+    val quickAmounts = when (billType) {
+        BillType.GAS -> listOf("480", "680", "850", "1050", "1250")
+        BillType.MOBILE -> listOf("199", "299", "499", "699", "999")
+        BillType.ELECTRICITY -> listOf("750", "1200", "1450", "2000", "3500")
+        BillType.WATER -> listOf("250", "480", "720", "950", "1500")
+    }
+
+    val quickProviders = when (billType) {
+        BillType.GAS -> listOf("Mahanagar Gas", "IGL", "HP Gas", "Bharat Gas", "Indane")
+        BillType.ELECTRICITY -> listOf("Adani Electricity", "Tata Power", "MSEDCL", "BESCOM")
+        BillType.WATER -> listOf("Municipal Corporation", "Delhi Jal Board", "BMC Water")
+        BillType.MOBILE -> listOf("Jio Prepaid", "Airtel", "Vi Prepaid", "BSNL")
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -224,7 +268,7 @@ fun BillPaymentModal(
                                 )
                             )
                             Text(
-                                text = "Secure Bill Settlement",
+                                text = if (billType == BillType.GAS) "Piped Gas & LPG Cylinder" else "Secure Bill Settlement",
                                 style = Typography.bodySmall.copy(color = AppleTextMuted)
                             )
                         }
@@ -356,9 +400,26 @@ fun BillPaymentModal(
 
                                 // Provider
                                 Text(
-                                    text = "Operator / Provider",
+                                    text = if (billType == BillType.GAS) "Gas Provider / Board" else "Operator / Provider",
                                     style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
                                 )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(quickProviders) { p ->
+                                        val isSelected = provider == p
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = { provider = p },
+                                            label = { Text(p, fontSize = 12.sp) },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = AppleBlue,
+                                                selectedLabelColor = Color.White
+                                            )
+                                        )
+                                    }
+                                }
                                 Spacer(modifier = Modifier.height(6.dp))
                                 OutlinedTextField(
                                     value = provider,

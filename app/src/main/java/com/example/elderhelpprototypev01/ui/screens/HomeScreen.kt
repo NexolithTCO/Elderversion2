@@ -394,6 +394,7 @@ fun SahaayHomeScreen(
                         selectedBillType?.let { type ->
                             BillPaymentModal(
                                 billType = type,
+                                userProfile = userProfile,
                                 onDismiss = { selectedBillType = null },
                                 onPaymentSuccess = { payment ->
                                     viewModel?.recordBillPayment(payment)

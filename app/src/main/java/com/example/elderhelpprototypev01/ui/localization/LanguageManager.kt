@@ -64,7 +64,15 @@ data class AppStrings(
     val confirmAndBook: String = "Confirm & Book Appointment",
     val done: String = "Done",
     val back: String = "Back",
-    val relationship: String = "Relationship"
+    val relationship: String = "Relationship",
+    // Gas Bill & Voice Payment Localization
+    val gasBill: String = "Gas Bill",
+    val gasBillSubtitle: String = "Piped Gas / LPG Cylinder",
+    val gasConsumerNumber: String = "Consumer Number / LPG ID",
+    val selectGasProvider: String = "Select Gas Provider",
+    val gasProvider: String = "Gas Provider / Board",
+    val lpgOrPipedGas: String = "LPG Cylinder / Piped Gas",
+    val voicePaymentBadge: String = "Sahaay Voice"
 )
 
 object Localization {
@@ -82,7 +90,7 @@ object Localization {
             doctorSubtitle = "क्लिनिक विजिट बुक करें",
             doctorBtn = "बुक करें",
             billsTitle = "बिल भुगतान",
-            billsSubtitle = "बिजली और पानी का बिल",
+            billsSubtitle = "बिजली, पानी व गैस बिल",
             billsBtn = "भुगतान करें",
             formsTitle = "सरकारी फॉर्म्स",
             formsSubtitle = "पेंशन और आईडी फॉर्म्स",
@@ -129,7 +137,14 @@ object Localization {
             confirmAndBook = "कन्फर्म करें और बुक करें",
             done = "हो गया",
             back = "पीछे",
-            relationship = "संबंध"
+            relationship = "संबंध",
+            gasBill = "गैस बिल",
+            gasBillSubtitle = "पाइप्ड गैस व एलपीजी सिलेंडर",
+            gasConsumerNumber = "उपभोक्ता संख्या (Consumer Number)",
+            selectGasProvider = "गैस प्रदाता चुनें (Select Gas Provider)",
+            gasProvider = "गैस प्रदाता / बोर्ड",
+            lpgOrPipedGas = "एलपीजी सिलेंडर / पाइप्ड गैस",
+            voicePaymentBadge = "सहाय वॉयस"
         )
         language.contains("Marathi") || language.contains("मराठी") -> AppStrings(
             appSubtitle = "तुमचा डिजिटल साथीदार",
@@ -316,7 +331,7 @@ object Localization {
             doctorSubtitle = "Book clinic visits",
             doctorBtn = "Book",
             billsTitle = "Pay Bills",
-            billsSubtitle = "Electricity & water",
+            billsSubtitle = "Electricity, water & gas",
             billsBtn = "Pay",
             formsTitle = "Forms",
             formsSubtitle = "Pension & ID forms",

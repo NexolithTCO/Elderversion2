@@ -24,6 +24,13 @@ enum class TransactionCategory(
         iconEmoji = "📱",
         defaultProvider = "Jio Prepaid"
     ),
+    GAS(
+        title = "Gas Bill",
+        iconEmoji = "🔥",
+        defaultProvider = "Mahanagar Gas",
+        badgeBgColor = Color(0xFFFFF3E0),
+        badgeTextColor = Color(0xFFE65100)
+    ),
     DOCTOR(
         title = "Doctor Booking",
         iconEmoji = "🩺",
@@ -39,6 +46,9 @@ data class TransactionRecord(
     val amount: String,
     val status: String = "Successful",
     val timestamp: String,
+    val isVoicePayment: Boolean = false,
     val billType: BillType? = null,
     val doctorSpecialty: String? = null
-)
+) {
+    val accountOrPhone: String get() = identifier
+}

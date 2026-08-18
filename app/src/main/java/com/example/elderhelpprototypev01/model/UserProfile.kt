@@ -63,6 +63,7 @@ data class UserProfile(
         EmergencyContact(name = "Rahul", relationship = "Son", phone = "+91 98765 43210")
     )
 ) {
+    val phone: String get() = contactNumber
     /**
      * Primary emergency contact accessor.
      */

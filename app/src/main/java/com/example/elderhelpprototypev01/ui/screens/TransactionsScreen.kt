@@ -266,6 +266,7 @@ fun TransactionsScreen(
                 TransactionCategory.ELECTRICITY -> BillType.ELECTRICITY
                 TransactionCategory.WATER -> BillType.WATER
                 TransactionCategory.MOBILE -> BillType.MOBILE
+                TransactionCategory.GAS -> BillType.GAS
                 TransactionCategory.DOCTOR -> BillType.ELECTRICITY
             }
 
@@ -323,6 +324,7 @@ fun TransactionHistoryCard(
         TransactionCategory.ELECTRICITY -> Color(0xFFFFF8E1)
         TransactionCategory.WATER -> Color(0xFFE1F5FE)
         TransactionCategory.MOBILE -> Color(0xFFF3E5F5)
+        TransactionCategory.GAS -> Color(0xFFFFF3E0)
         TransactionCategory.DOCTOR -> Color(0xFFEDE7F6)
     }
 
@@ -399,37 +401,64 @@ fun TransactionHistoryCard(
             HorizontalDivider(color = AppleBorderSubtle.copy(alpha = 0.6f), thickness = 0.5.dp)
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Bottom Row: Date/Time + Status Badge + Pay Again Button
+            // Bottom Row: Date/Time + Status Badge + Voice Badge + Pay Again Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    // Status Badge with Checkmark
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = Color(0xFFE8F5E9)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        // Status Badge with Checkmark
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFFE8F5E9)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = "Status",
-                                tint = Color(0xFF2E7D32),
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = transaction.status,
-                                style = Typography.labelSmall.copy(
-                                    color = Color(0xFF2E7D32),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Status",
+                                    tint = Color(0xFF2E7D32),
+                                    modifier = Modifier.size(12.dp)
                                 )
-                            )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = transaction.status,
+                                    style = Typography.labelSmall.copy(
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp
+                                    )
+                                )
+                            }
+                        }
+
+                        // Voice Payment Badge
+                        if (transaction.isVoicePayment) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFE3F2FD)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "🎙️ Sahaay Voice",
+                                        style = Typography.labelSmall.copy(
+                                            color = AppleBlue,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
 

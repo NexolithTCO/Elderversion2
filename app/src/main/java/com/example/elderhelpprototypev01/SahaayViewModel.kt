@@ -107,6 +107,17 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
     private val _transactions = MutableStateFlow<List<com.example.elderhelpprototypev01.model.TransactionRecord>>(
         listOf(
             com.example.elderhelpprototypev01.model.TransactionRecord(
+                id = "TXN-GAS-5284",
+                category = com.example.elderhelpprototypev01.model.TransactionCategory.GAS,
+                provider = "Mahanagar Gas",
+                identifier = "901238475",
+                amount = "680",
+                status = "Successful",
+                timestamp = "16 Aug 2026, 11:15 AM",
+                isVoicePayment = true,
+                billType = com.example.elderhelpprototypev01.model.BillType.GAS
+            ),
+            com.example.elderhelpprototypev01.model.TransactionRecord(
                 id = "TXN-EL-9021",
                 category = com.example.elderhelpprototypev01.model.TransactionCategory.ELECTRICITY,
                 provider = "Adani Electricity",
@@ -114,6 +125,7 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 amount = "1450",
                 status = "Successful",
                 timestamp = "14 Aug 2026, 02:45 PM",
+                isVoicePayment = false,
                 billType = com.example.elderhelpprototypev01.model.BillType.ELECTRICITY
             ),
             com.example.elderhelpprototypev01.model.TransactionRecord(
@@ -124,6 +136,7 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 amount = "299",
                 status = "Successful",
                 timestamp = "11 Aug 2026, 07:15 PM",
+                isVoicePayment = false,
                 billType = com.example.elderhelpprototypev01.model.BillType.MOBILE
             ),
             com.example.elderhelpprototypev01.model.TransactionRecord(
@@ -134,6 +147,7 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 amount = "800",
                 status = "Successful",
                 timestamp = "08 Aug 2026, 10:30 AM",
+                isVoicePayment = true,
                 doctorSpecialty = "Cardiologist"
             ),
             com.example.elderhelpprototypev01.model.TransactionRecord(
@@ -144,13 +158,17 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 amount = "480",
                 status = "Successful",
                 timestamp = "02 Aug 2026, 11:20 AM",
+                isVoicePayment = false,
                 billType = com.example.elderhelpprototypev01.model.BillType.WATER
             )
         )
     )
     val transactions: StateFlow<List<com.example.elderhelpprototypev01.model.TransactionRecord>> = _transactions.asStateFlow()
 
-    fun updateAppointment(state: com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState) {
+    fun updateAppointment(
+        state: com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState,
+        isVoicePayment: Boolean = false
+    ) {
         _bookedAppointment.value = state
         if (state.isConfirmed) {
             val df = java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault())
@@ -162,6 +180,7 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 amount = "800",
                 status = "Successful",
                 timestamp = df.format(java.util.Date()),
+                isVoicePayment = isVoicePayment,
                 doctorSpecialty = state.specialty
             )
             _transactions.value = listOf(record) + _transactions.value
@@ -176,12 +195,16 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
         _userProfile.value = profile
     }
 
-    fun recordBillPayment(payment: com.example.elderhelpprototypev01.model.BillPayment) {
+    fun recordBillPayment(
+        payment: com.example.elderhelpprototypev01.model.BillPayment,
+        isVoicePayment: Boolean = false
+    ) {
         _paidBills.value = listOf(payment) + _paidBills.value
         val category = when (payment.type) {
             com.example.elderhelpprototypev01.model.BillType.ELECTRICITY -> com.example.elderhelpprototypev01.model.TransactionCategory.ELECTRICITY
             com.example.elderhelpprototypev01.model.BillType.WATER -> com.example.elderhelpprototypev01.model.TransactionCategory.WATER
             com.example.elderhelpprototypev01.model.BillType.MOBILE -> com.example.elderhelpprototypev01.model.TransactionCategory.MOBILE
+            com.example.elderhelpprototypev01.model.BillType.GAS -> com.example.elderhelpprototypev01.model.TransactionCategory.GAS
         }
         val record = com.example.elderhelpprototypev01.model.TransactionRecord(
             id = payment.id,
@@ -191,6 +214,7 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
             amount = payment.amount,
             status = "Successful",
             timestamp = payment.timestamp,
+            isVoicePayment = isVoicePayment,
             billType = payment.type
         )
         _transactions.value = listOf(record) + _transactions.value
@@ -483,6 +507,9 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                     val extracted = com.example.elderhelpprototypev01.ai.DoctorBookingManager.extractState(_conversation.value, text)
                     if (extracted.specialty != null) {
                         _bookedAppointment.value = extracted
+                        if (extracted.isConfirmed) {
+                            updateAppointment(extracted, isVoicePayment = true)
+                        }
                     }
                 }
 
@@ -490,16 +517,19 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 if (com.example.elderhelpprototypev01.ai.BillPaymentManager.isBillPaymentIntent(text, _conversation.value)) {
                     val paymentState = com.example.elderhelpprototypev01.ai.BillPaymentManager.extractState(_conversation.value, text)
                     if (paymentState.isConfirmed && paymentState.billType != null && paymentState.amount != null) {
+                        val df = java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault())
+                        val userPhoneDigits = _userProfile.value.contactNumber.filter { it.isDigit() }.takeLast(10)
+                        val identifier = paymentState.accountId ?: if (userPhoneDigits.isNotBlank()) userPhoneDigits else "901238475"
                         val payment = com.example.elderhelpprototypev01.model.BillPayment(
-                            id = "BP-${System.currentTimeMillis() % 100000}",
+                            id = "TXN-VOICE-${paymentState.billType?.name ?: "BILL"}-${System.currentTimeMillis() % 100000}",
                             type = paymentState.billType!!,
-                            identifier = paymentState.accountId ?: "N/A",
+                            identifier = identifier,
                             provider = paymentState.provider ?: paymentState.billType!!.defaultProvider,
                             amount = paymentState.amount!!,
                             status = "Paid Successfully",
-                            timestamp = "Just now"
+                            timestamp = df.format(java.util.Date())
                         )
-                        recordBillPayment(payment)
+                        recordBillPayment(payment, isVoicePayment = true)
                     }
                 }
 

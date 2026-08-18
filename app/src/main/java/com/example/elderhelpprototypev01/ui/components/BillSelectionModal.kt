@@ -8,8 +8,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -63,8 +65,18 @@ fun BillSelectionModal(
             hint = "Mobile Number",
             bgColor = Color(0xFFF3E5F5),
             accentColor = Color(0xFF8E24AA)
+        ),
+        BillOption(
+            type = BillType.GAS,
+            emoji = "🔥",
+            label = "Gas Bill",
+            hint = "Consumer / LPG ID",
+            bgColor = Color(0xFFFFF3E0),
+            accentColor = Color(0xFFFF9800)
         )
     )
+
+    val scrollState = rememberScrollState()
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -80,6 +92,7 @@ fun BillSelectionModal(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(scrollState)
                     .padding(20.dp)
             ) {
                 // Header

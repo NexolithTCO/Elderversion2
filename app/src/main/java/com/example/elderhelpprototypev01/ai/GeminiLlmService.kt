@@ -226,17 +226,19 @@ Follow this EXACT sequential question flow:
    - Acknowledge warmly: "Your appointment for [Doctor Type] in [Location] on [Date and Time] ([Visit Mode]) has been confirmed! Is there anything else I can help you with?"
 
 ### CONVERSATION FLOW FOR PAY BILLS:
-When the user expresses an intent to pay a bill (e.g., "pay my bill", "recharge my phone", "pay electricity"):
+When the user expresses an intent to pay a bill (e.g., "pay my bill", "recharge my phone", "pay electricity", "pay gas bill"):
 Guide them step-by-step through a sequential dialogue. Ask ONLY ONE question at a time.
 
 1. Bill Category / Type (if not specified):
-   - Prompt: "Which bill would you like to pay? (Electricity, Water, or Mobile Recharge)"
+   - Prompt: "Which bill would you like to pay? (Electricity, Water, Mobile Recharge, or Gas Bill)"
 2. Account Identifier / Details:
    - For Electricity: "Please tell me your Consumer or Account ID."
    - For Water: "Please tell me your Water Consumer / Meter Number."
    - For Mobile Recharge: "Which mobile number would you like to recharge?"
+   - For Gas Bill: "Please tell me your Consumer Number or LPG ID."
 3. Provider / Operator (if applicable):
-   - Prompt: "Who is your service provider or operator? (e.g., Adani Electricity, Tata Power, Jio, Airtel)"
+   - For Gas Bill: "Which gas provider do you use? (e.g., Mahanagar Gas, IGL, HP Gas)"
+   - For other utilities: "Who is your service provider or operator? (e.g., Adani Electricity, Tata Power, Jio, Airtel)"
 4. Amount:
    - Prompt: "How much amount would you like to pay or recharge?"
 5. Confirmation:
@@ -301,20 +303,22 @@ You MUST return ONLY valid JSON matching this schema:
 - गर्मजोशी से स्वीकार करें: "आपका [Doctor Type] का अपॉइंटमेंट [Location] में [Date/Time] पर ([mode]) सफलतापूर्वक कन्फर्म हो गया है! क्या मैं आपकी और कोई मदद कर सकता हूँ?"
 
 ### बिल भुगतान फ्लो:
-जब उपयोगकर्ता बिल भरना चाहें (जैसे: "बिजली का बिल भरना है", "मोबाइल रिचार्ज करना है", "bill pay karna hai"), तो इस क्रमिक प्रश्नावली का पालन करें।
+जब उपयोगकर्ता बिल भरना चाहें (जैसे: "बिजली का बिल भरना है", "गैस का बिल भरना है", "मोबाइल रिचार्ज करना है", "bill pay karna hai"), तो इस क्रमिक प्रश्नावली का पालन करें।
 
 केवल एक प्रश्न एक बार में पूछें:
 
 चरण 1 — बिल की श्रेणी (यदि बताई न हो):
-- प्रॉम्प्ट: "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज)"
+- प्रॉम्प्ट: "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, मोबाइल रिचार्ज, या गैस बिल)"
 
 चरण 2 — खाता विवरण:
 - बिजली के लिए: "कृपया अपना उपभोक्ता आईडी (Consumer ID) बताएं।"
 - पानी के लिए: "कृपया अपना वाटर मीटर नंबर बताएं।"
 - मोबाइल रिचार्ज के लिए: "आप किस मोबाइल नंबर पर रिचार्ज करना चाहते हैं?"
+- गैस बिल के लिए: "कृपया अपना कंज्यूमर नंबर या एलपीजी आईडी बताएं।"
 
 चरण 3 — सेवा प्रदाता और राशि:
-- प्रॉम्प्ट: "आपकी कंपनी का नाम क्या है और आप कितने रुपये का भुगतान करना चाहते हैं?"
+- गैस बिल के लिए: "आपकी गैस कंपनी कौन सी है? (जैसे: महानगर गैस, एचपी गैस)"
+- अन्य बिलों के लिए: "आपकी कंपनी का नाम क्या है और आप कितने रुपये का भुगतान करना चाहते हैं?"
 
 चरण 4 — पुष्टि:
 - स्पष्ट रूप से सारांश दें:
@@ -428,9 +432,9 @@ BOOK_APPOINTMENT, PAY_BILL, FILL_FORM, EXPLAIN_TERM, ASK_QUESTION, EMERGENCY_HEL
             // Bilingual default prompts for when Gemini returns an empty response field
             val defaultPrompt = when (intent) {
                 "PAY_BILL" -> if (isHindi)
-                    "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, या मोबाइल रिचार्ज)"
+                    "आप कौन सा बिल भरना चाहते हैं? (बिजली बिल, पानी का बिल, मोबाइल रिचार्ज, या गैस बिल)"
                 else
-                    "Which bill would you like to pay? (Electricity, Water, or Mobile Recharge)"
+                    "Which bill would you like to pay? (Electricity, Water, Mobile Recharge, or Gas Bill)"
                 "BOOK_APPOINTMENT" -> if (isHindi)
                     "आप किस तरह के डॉक्टर से अपॉइंटमेंट लेना चाहते हैं? (जैसे: सामान्य डॉक्टर, त्वचा विशेषज्ञ, या हृदय रोग विशेषज्ञ)"
                 else
