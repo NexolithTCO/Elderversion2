@@ -426,6 +426,15 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
 
+        // ---- Step 1b: Emergency Contact Voice Match short-circuit ----
+        if (isEmergencyCallIntent(text)) {
+            val contact = _userProfile.value.findEmergencyContact(text)
+            if (contact != null) {
+                handleEmergencyCall(text, contact)
+                return
+            }
+        }
+
         // ---- Step 2: LLM pipeline ----
         _voiceState.value = VoiceState.Processing
         _engineState.value = VoiceInteractionState.Processing
@@ -586,6 +595,48 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 _voiceState.value = VoiceState.Done
                 _engineState.value = VoiceInteractionState.Done
             }
+        }
+    }
+
+    private fun isEmergencyCallIntent(text: String): Boolean {
+        val lower = text.lowercase(java.util.Locale.ROOT)
+        val callWords = listOf(
+            "call", "phone", "dial", "ring", "emergency", "sos", "contact",
+            "कॉल", "फोन", "फ़ोन", "लगाओ", "मिलाओ", "संपर्क", "आपातकाल", "मदद"
+        )
+        return callWords.any { lower.contains(it) }
+    }
+
+    private fun handleEmergencyCall(text: String, contact: com.example.elderhelpprototypev01.model.EmergencyContact) {
+        _voiceState.value = VoiceState.Done
+        _engineState.value = VoiceInteractionState.Done
+
+        val isHindi = _currentLanguage.value.contains("Hindi") || _currentLanguage.value.contains("हिंदी")
+        val responseText = if (isHindi) {
+            "आपके ${contact.relationship} ${contact.name} (${contact.phone}) को कॉल मिलाया जा रहा है।"
+        } else {
+            "Calling your ${contact.relationship} ${contact.name} at ${contact.phone}."
+        }
+
+        val assistantResponse = AssistantResponse(
+            intent = "EMERGENCY_HELP",
+            goal = "Call emergency contact ${contact.name} (${contact.relationship})",
+            response = responseText,
+            needsClarification = false,
+            suggestedNextStep = if (isHindi) "${contact.phone} पर कॉल करने के लिए बटन दबाएं।" else "Tap to dial emergency number ${contact.phone}.",
+            helpfulTip = if (isHindi) "आपातकालीन स्थिति में शांत रहें और फोन लाइन चालू रखें।" else "Stay calm and keep your phone line open for emergency assistance."
+        )
+
+        _currentResponse.value = assistantResponse
+        _conversation.value = _conversation.value +
+                ConversationMessage(role = MessageRole.USER, text = text) +
+                ConversationMessage(role = MessageRole.ASSISTANT, text = responseText)
+
+        lastSuccessfulResponse = assistantResponse
+        lastSpokenText = responseText
+
+        if (_ttsEnabled.value) {
+            ttsManager.speakRaw(responseText, force = false)
         }
     }
 

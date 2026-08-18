@@ -43,8 +43,11 @@ fun ProfileModal(
     var age by remember { mutableStateOf(profile.age) }
     var contactNumber by remember { mutableStateOf(profile.contactNumber) }
     var emergencyContactName by remember { mutableStateOf(profile.emergencyContactName) }
+    var emergencyContactRelationship by remember { mutableStateOf(profile.emergencyContactRelationship) }
     var emergencyContactPhone by remember { mutableStateOf(profile.emergencyContactPhone) }
     var address by remember { mutableStateOf(profile.address) }
+
+    val quickRelationships = listOf("Son", "Daughter", "Husband", "Wife", "Doctor", "Caregiver", "Brother", "Sister")
 
     val scrollState = rememberScrollState()
 
@@ -204,7 +207,7 @@ fun ProfileModal(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Section: Emergency Contact Info
+                    // Section: Emergency Contact Info (Explicit Name, Relationship, Phone)
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
@@ -217,7 +220,7 @@ fun ProfileModal(
                                 Text("🚨", fontSize = 16.sp)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "EMERGENCY CONTACT (FOR SOS)",
+                                    text = "EMERGENCY CONTACT (FOR SOS & VOICE)",
                                     style = Typography.labelMedium.copy(
                                         color = Color(0xFFFF3B30),
                                         fontWeight = FontWeight.Bold,
@@ -230,12 +233,44 @@ fun ProfileModal(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // Emergency Contact Person Name
-                            Text("Emergency Contact Name & Relation", style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary))
+                            Text("Emergency Contact Name", style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary))
                             Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
                                 value = emergencyContactName,
                                 onValueChange = { emergencyContactName = it },
-                                placeholder = { Text("e.g. Rahul (Son)") },
+                                placeholder = { Text("e.g. Rahul") },
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Relationship Field & Quick Chips
+                            Text("Relationship (e.g. Son, Daughter, Husband)", style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                quickRelationships.take(4).forEach { rel ->
+                                    val isSelected = emergencyContactRelationship.equals(rel, ignoreCase = true)
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = { emergencyContactRelationship = rel },
+                                        label = { Text(rel, fontSize = 12.sp) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = Color(0xFFFF3B30).copy(alpha = 0.15f),
+                                            selectedLabelColor = Color(0xFFFF3B30)
+                                        )
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            OutlinedTextField(
+                                value = emergencyContactRelationship,
+                                onValueChange = { emergencyContactRelationship = it },
+                                placeholder = { Text("e.g. Son / Daughter / Husband / Doctor") },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
@@ -262,13 +297,20 @@ fun ProfileModal(
                     // Save Button
                     Button(
                         onClick = {
+                            val contact = com.example.elderhelpprototypev01.model.EmergencyContact(
+                                name = emergencyContactName.trim(),
+                                relationship = emergencyContactRelationship.trim(),
+                                phone = emergencyContactPhone.trim()
+                            )
                             val updated = UserProfile(
                                 fullName = fullName.trim(),
                                 age = age.trim(),
                                 contactNumber = contactNumber.trim(),
                                 emergencyContactName = emergencyContactName.trim(),
+                                emergencyContactRelationship = emergencyContactRelationship.trim(),
                                 emergencyContactPhone = emergencyContactPhone.trim(),
-                                address = address.trim()
+                                address = address.trim(),
+                                emergencyContacts = listOf(contact)
                             )
                             onSaveProfile(updated)
                             onDismiss()

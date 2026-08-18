@@ -361,6 +361,8 @@ fun SahaayHomeScreen(
                         if (showDoctorModal) {
                             DoctorAppointmentModal(
                                 appointment = bookedAppointment,
+                                userProfile = userProfile,
+                                currentLanguage = currentLanguage,
                                 onDismiss = { showDoctorModal = false },
                                 onBookManual = { newBooking ->
                                     viewModel?.updateAppointment(newBooking)
@@ -403,7 +405,7 @@ fun SahaayHomeScreen(
                         if (showEmergencyServicesModal) {
                             EmergencyServicesModal(
                                 onDismiss = { showEmergencyServicesModal = false },
-                                contactName = userProfile.emergencyContactName,
+                                contactName = userProfile.emergencyContactDisplayName,
                                 contactNumber = userProfile.emergencyContactPhone,
                                 currentLanguage = currentLanguage
                             )
@@ -413,9 +415,9 @@ fun SahaayHomeScreen(
                             EmergencySosModal(
                                 onDismiss = { isSosModalOpen = false },
                                 onEmergencyTriggered = {
-                                    activeMessage = "Emergency call initiated to ${userProfile.emergencyContactName} (${userProfile.emergencyContactPhone})"
+                                    activeMessage = "Emergency call initiated to ${userProfile.emergencyContactDisplayName} (${userProfile.emergencyContactPhone})"
                                 },
-                                contactName = userProfile.emergencyContactName,
+                                contactName = userProfile.emergencyContactDisplayName,
                                 contactNumber = userProfile.emergencyContactPhone,
                                 currentLanguage = currentLanguage
                             )

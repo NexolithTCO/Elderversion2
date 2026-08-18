@@ -6,7 +6,6 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.LocalPolice
 import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,9 +25,20 @@ data class QuickActionItem(
     val buttonText: String,
     val icon: ImageVector,
     val iconTint: Color,
-    val iconBgColor: Color
+    val iconBgColor: Color,
+    val emoji: String? = null
 )
 
+/**
+ * Explore Tasks section redesigned with compact horizontal row action cards:
+ *
+ * [ 👨‍⚕️ Book Doctor → ]
+ * [ 💡 Pay Bills → ]
+ * [ 📄 Government Forms → ]
+ * [ 🚨 Emergency Assistance → ]
+ *
+ * Visual-first layout with high-contrast typography, large tap targets, and clear spacing.
+ */
 @Composable
 fun QuickActionsSection(
     currentLanguage: String = "English (India)",
@@ -40,12 +50,13 @@ fun QuickActionsSection(
     val actions = listOf(
         QuickActionItem(
             id = "doctor",
-            title = strings.doctorTitle,
+            title = strings.bookDoctor,
             subtitle = strings.doctorSubtitle,
             buttonText = strings.doctorBtn,
             icon = Icons.Default.MedicalServices,
             iconTint = DoctorBlueIcon,
-            iconBgColor = DoctorBlueBg
+            iconBgColor = DoctorBlueBg,
+            emoji = "👨‍⚕️"
         ),
         QuickActionItem(
             id = "bills",
@@ -54,25 +65,28 @@ fun QuickActionsSection(
             buttonText = strings.billsBtn,
             icon = Icons.AutoMirrored.Filled.ReceiptLong,
             iconTint = BillsGreenIcon,
-            iconBgColor = BillsGreenBg
+            iconBgColor = BillsGreenBg,
+            emoji = "💡"
         ),
         QuickActionItem(
             id = "forms",
-            title = strings.formsTitle,
+            title = strings.governmentForms,
             subtitle = strings.formsSubtitle,
             buttonText = strings.formsBtn,
             icon = Icons.Default.Description,
             iconTint = FormsOrangeIcon,
-            iconBgColor = FormsOrangeBg
+            iconBgColor = FormsOrangeBg,
+            emoji = "📄"
         ),
         QuickActionItem(
             id = "emergency",
-            title = strings.emergencyServicesTitle,
+            title = strings.emergencyAssistance,
             subtitle = strings.sosSubtitle,
             buttonText = strings.sosBtn,
             icon = Icons.Default.LocalPolice,
             iconTint = SosRedIcon,
-            iconBgColor = SosRedBg
+            iconBgColor = SosRedBg,
+            emoji = "🚨"
         )
     )
 
@@ -105,28 +119,22 @@ fun QuickActionsSection(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 2x2 Grid of Action Cards
+        // Compact Horizontal Action Cards in a Clean Vertical Stack
         Column(
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            actions.chunked(2).forEach { rowItems ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    rowItems.forEach { item ->
-                        QuickActionCard(
-                            title = item.title,
-                            subtitle = item.subtitle,
-                            actionButtonText = item.buttonText,
-                            icon = item.icon,
-                            iconTint = item.iconTint,
-                            iconBgColor = item.iconBgColor,
-                            onClick = { onActionClick(item) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+            actions.forEach { item ->
+                QuickActionCard(
+                    title = item.title,
+                    subtitle = item.subtitle,
+                    actionButtonText = item.buttonText,
+                    icon = item.icon,
+                    iconTint = item.iconTint,
+                    iconBgColor = item.iconBgColor,
+                    emoji = item.emoji,
+                    onClick = { onActionClick(item) },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

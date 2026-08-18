@@ -189,6 +189,46 @@ fun ResponseCard(
                 }
             }
 
+            // ---- Emergency Action Button (for EMERGENCY_HELP intent) ----
+            if (response.intent == "EMERGENCY_HELP") {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                Spacer(modifier = Modifier.height(14.dp))
+                Button(
+                    onClick = {
+                        val digits = response.response.filter { it.isDigit() || it == '+' }
+                        val phoneToCall = if (digits.length >= 10) digits else "+919876543210"
+                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                            data = android.net.Uri.parse("tel:$phoneToCall")
+                            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            // ignore
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30)),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhoneInTalk,
+                        contentDescription = "Call",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Call Emergency Contact Now 📞",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
             Spacer(modifier = Modifier.height(12.dp))

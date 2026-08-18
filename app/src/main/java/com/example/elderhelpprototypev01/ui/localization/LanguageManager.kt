@@ -42,7 +42,27 @@ data class AppStrings(
     val grantLocation: String = "Grant Location Access",
     val openingMaps: String = "Opening Google Maps…",
     val callingContact: String = "Calling emergency contact…",
-    val close: String = "Close"
+    val close: String = "Close",
+    // Redesigned Doctor Booking Flow & Compact Tasks
+    val bookDoctor: String = "Book Doctor",
+    val governmentForms: String = "Government Forms",
+    val emergencyAssistance: String = "Emergency Assistance",
+    val chooseSpecialty: String = "Choose Specialty",
+    val chooseDoctor: String = "Choose Doctor",
+    val appointmentDetails: String = "Appointment Details",
+    val bookingConfirmed: String = "Booking Confirmed",
+    val patientName: String = "Patient Name",
+    val patientAge: String = "Age",
+    val patientPhone: String = "Phone Number",
+    val selectDate: String = "Select Date",
+    val selectTime: String = "Select Time",
+    val consultationMode: String = "Consultation Mode",
+    val inPersonVisit: String = "In-Person Clinic Visit",
+    val onlineConsultation: String = "Online Consultation",
+    val confirmAndBook: String = "Confirm & Book Appointment",
+    val done: String = "Done",
+    val back: String = "Back",
+    val relationship: String = "Relationship"
 )
 
 object Localization {
@@ -86,7 +106,26 @@ object Localization {
             grantLocation = "स्थान एक्सेस दें",
             openingMaps = "Google Maps खोल रहे हैं…",
             callingContact = "आपातकालीन संपर्क को कॉल कर रहे हैं…",
-            close = "बंद करें"
+            close = "बंद करें",
+            bookDoctor = "डॉक्टर बुक करें",
+            governmentForms = "सरकारी फॉर्म",
+            emergencyAssistance = "आपातकालीन सहायता",
+            chooseSpecialty = "विशेषज्ञता चुनें",
+            chooseDoctor = "डॉक्टर चुनें",
+            appointmentDetails = "अपॉइंटमेंट विवरण",
+            bookingConfirmed = "अपॉइंटमेंट कन्फर्म हो गया",
+            patientName = "मरीज़ का नाम",
+            patientAge = "उम्र",
+            patientPhone = "फोन नंबर",
+            selectDate = "तारीख चुनें",
+            selectTime = "समय चुनें",
+            consultationMode = "परामर्श का तरीका",
+            inPersonVisit = "क्लिनिक विज़िट",
+            onlineConsultation = "ऑनलाइन परामर्श",
+            confirmAndBook = "कन्फर्म करें और बुक करें",
+            done = "हो गया",
+            back = "पीछे",
+            relationship = "संबंध"
         )
         language.contains("Marathi") || language.contains("मराठी") -> AppStrings(
             appSubtitle = "तुमचा डिजिटल साथीदार",
