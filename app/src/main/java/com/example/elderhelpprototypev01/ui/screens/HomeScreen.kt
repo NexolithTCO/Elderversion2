@@ -56,6 +56,7 @@ fun SahaayHomeScreen(
     var showBillSelection by remember { mutableStateOf(false) }
     var selectedBillType by remember { mutableStateOf<BillType?>(null) }
     var isSosModalOpen by remember { mutableStateOf(false) }
+    var showEmergencyServicesModal by remember { mutableStateOf(false) }
 
     // Reactive State from ViewModel
     val bookedAppointment by (viewModel?.bookedAppointment?.collectAsStateWithLifecycle()
@@ -279,6 +280,7 @@ fun SahaayHomeScreen(
                                         "doctor" -> showDoctorModal = true
                                         "bills" -> showBillSelection = true
                                         "forms" -> showPensionForm = true
+                                        "emergency" -> showEmergencyServicesModal = true
                                         "sos" -> isSosModalOpen = true
                                         else -> {
                                             activeMessage = "${action.title} selected"
@@ -381,6 +383,15 @@ fun SahaayHomeScreen(
                                     viewModel?.recordBillPayment(payment)
                                     Toast.makeText(context, "₹${payment.amount} paid successfully!", Toast.LENGTH_SHORT).show()
                                 }
+                            )
+                        }
+
+                        if (showEmergencyServicesModal) {
+                            EmergencyServicesModal(
+                                onDismiss = { showEmergencyServicesModal = false },
+                                contactName = userProfile.emergencyContactName,
+                                contactNumber = userProfile.emergencyContactPhone,
+                                currentLanguage = currentLanguage
                             )
                         }
 

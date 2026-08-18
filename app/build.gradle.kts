@@ -75,6 +75,9 @@ dependencies {
     // JSON parsing — Gemini response
     implementation(libs.gson)
 
+    // Location services — Nearest police station
+    implementation(libs.play.services.location)
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

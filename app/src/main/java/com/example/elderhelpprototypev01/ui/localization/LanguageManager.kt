@@ -33,7 +33,16 @@ data class AppStrings(
     val settingsSubtitle: String,
     val prefLanguageTitle: String,
     val emergencySos: String = "EMERGENCY SOS",
-    val cancel: String = "Cancel"
+    val cancel: String = "Cancel",
+    // Emergency Services
+    val emergencyServicesTitle: String = "Emergency Services",
+    val callEmergencyContact: String = "Call Emergency Contact",
+    val findNearestPolice: String = "Find Nearest Police Station",
+    val locationRequired: String = "Location access is required to find nearby police stations",
+    val grantLocation: String = "Grant Location Access",
+    val openingMaps: String = "Opening Google Maps…",
+    val callingContact: String = "Calling emergency contact…",
+    val close: String = "Close"
 )
 
 object Localization {
@@ -69,7 +78,15 @@ object Localization {
             welcomePill = "नमस्ते! 🙏 स्वागत है",
             settingsTitle = "सेटिंग्स",
             settingsSubtitle = "पसंद और आपातकालीन सेटअप",
-            prefLanguageTitle = "पसंदीदा भाषा"
+            prefLanguageTitle = "पसंदीदा भाषा",
+            emergencyServicesTitle = "आपातकालीन सेवाएँ",
+            callEmergencyContact = "आपातकालीन संपर्क को कॉल करें",
+            findNearestPolice = "निकटतम पुलिस स्टेशन खोजें",
+            locationRequired = "निकटतम पुलिस स्टेशन खोजने के लिए स्थान एक्सेस आवश्यक है",
+            grantLocation = "स्थान एक्सेस दें",
+            openingMaps = "Google Maps खोल रहे हैं…",
+            callingContact = "आपातकालीन संपर्क को कॉल कर रहे हैं…",
+            close = "बंद करें"
         )
         language.contains("Marathi") || language.contains("मराठी") -> AppStrings(
             appSubtitle = "तुमचा डिजिटल साथीदार",
@@ -102,7 +119,15 @@ object Localization {
             welcomePill = "नमस्कार! 🙏 स्वागत आहे",
             settingsTitle = "सेटिंग्ज",
             settingsSubtitle = "पसंती आणि आपत्कालीन सेटअप",
-            prefLanguageTitle = "पसंतीची भाषा"
+            prefLanguageTitle = "पसंतीची भाषा",
+            emergencyServicesTitle = "आपत्कालीन सेवा",
+            callEmergencyContact = "आपत्कालीन संपर्काला कॉल करा",
+            findNearestPolice = "जवळचे पोलिस स्टेशन शोधा",
+            locationRequired = "जवळचे पोलिस स्टेशन शोधण्यासाठी स्थान एक्सेस आवश्यक आहे",
+            grantLocation = "स्थान एक्सेस द्या",
+            openingMaps = "Google Maps उघडत आहे…",
+            callingContact = "आपत्कालीन संपर्काला कॉल करत आहे…",
+            close = "बंद करा"
         )
         language.contains("Tamil") || language.contains("தமிழ்") -> AppStrings(
             appSubtitle = "உங்கள் டிஜிட்டல் தோழன்",
@@ -135,7 +160,15 @@ object Localization {
             welcomePill = "வணக்கம்! 🙏 நல்வரவு",
             settingsTitle = "அமைப்புகள்",
             settingsSubtitle = "விருப்பத்தேர்வுகள் & அவசரநிலை",
-            prefLanguageTitle = "விருப்பமான மொழி"
+            prefLanguageTitle = "விருப்பமான மொழி",
+            emergencyServicesTitle = "அவசர சேவைகள்",
+            callEmergencyContact = "அவசர தொடர்பை அழைக்கவும்",
+            findNearestPolice = "அருகிலுள்ள காவல் நிலையம் கண்டறியவும்",
+            locationRequired = "அருகிலுள்ள காவல் நிலையத்தைக் கண்டறிய இருப்பிட அணுகல் தேவை",
+            grantLocation = "இருப்பிட அணுகலை வழங்கவும்",
+            openingMaps = "Google Maps திறக்கிறது…",
+            callingContact = "அவசர தொடர்பை அழைக்கிறது…",
+            close = "மூடு"
         )
         language.contains("Telugu") || language.contains("తెలుగు") -> AppStrings(
             appSubtitle = "మీ డిజిటల్ తోడు",
@@ -168,7 +201,15 @@ object Localization {
             welcomePill = "నమస్కారం! 🙏 స్వాగతం",
             settingsTitle = "సెట్టింగ్స్",
             settingsSubtitle = "అభిరుచులు & అత్యవసర విభాగాలు",
-            prefLanguageTitle = "ఎంచుకున్న భాష"
+            prefLanguageTitle = "ఎంచుకున్న భాష",
+            emergencyServicesTitle = "అత్యవసర సేవలు",
+            callEmergencyContact = "అత్యవసర సంప్రదింపును కాల్ చేయండి",
+            findNearestPolice = "సమీపంలోని పోలీస్ స్టేషన్ కనుగొనండి",
+            locationRequired = "సమీపంలోని పోలీస్ స్టేషన్ కనుగొనడానికి స్థాన యాక్సెస్ అవసరం",
+            grantLocation = "స్థాన యాక్సెస్ ఇవ్వండి",
+            openingMaps = "Google Maps తెరుస్తోంది…",
+            callingContact = "అత్యవసర సంప్రదింపుకు కాల్ చేస్తోంది…",
+            close = "మూసివేయండి"
         )
         language.contains("Bengali") || language.contains("বাংলা") -> AppStrings(
             appSubtitle = "আপনার ডিজিটাল সঙ্গী",
@@ -201,7 +242,15 @@ object Localization {
             welcomePill = "নমস্কার! 🙏 স্বাগতম",
             settingsTitle = "সেটিংস",
             settingsSubtitle = "পছন্দ এবং জরুরি সেটআপ",
-            prefLanguageTitle = "পছন্দের ভাষা"
+            prefLanguageTitle = "পছন্দের ভাষা",
+            emergencyServicesTitle = "জরুরি সেবা",
+            callEmergencyContact = "জরুরি যোগাযোগে কল করুন",
+            findNearestPolice = "নিকটতম থানা খুঁজুন",
+            locationRequired = "নিকটতম থানা খুঁজতে অবস্থান অ্যাক্সেস প্রয়োজন",
+            grantLocation = "অবস্থান অ্যাক্সেস দিন",
+            openingMaps = "Google Maps খুলছে…",
+            callingContact = "জরুরি যোগাযোগে কল করা হচ্ছে…",
+            close = "বন্ধ করুন"
         )
         else -> AppStrings(
             appSubtitle = "Your digital companion",

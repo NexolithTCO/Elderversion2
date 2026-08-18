@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.LocalPolice
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Text
@@ -65,11 +66,11 @@ fun QuickActionsSection(
             iconBgColor = FormsOrangeBg
         ),
         QuickActionItem(
-            id = "sos",
-            title = strings.sosTitle,
+            id = "emergency",
+            title = strings.emergencyServicesTitle,
             subtitle = strings.sosSubtitle,
             buttonText = strings.sosBtn,
-            icon = Icons.Default.Warning,
+            icon = Icons.Default.LocalPolice,
             iconTint = SosRedIcon,
             iconBgColor = SosRedBg
         )
