@@ -95,6 +95,7 @@ fun SahaayHomeScreen(
                 }
             )
         },
+        containerColor = AppleCanvasBg,
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
         Crossfade(
