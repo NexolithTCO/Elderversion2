@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.elderhelpprototypev01.overlay.SahaayOverlayService
 import com.example.elderhelpprototypev01.ui.screens.SahaayHomeScreen
+import com.example.elderhelpprototypev01.ui.theme.AppleCanvasBg
 import com.example.elderhelpprototypev01.ui.theme.ElderHelpPrototypeV01Theme
 
 class MainActivity : ComponentActivity() {
@@ -45,9 +47,11 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ElderHelpPrototypeV01Theme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = AppleCanvasBg
+                ) {
                     SahaayHomeScreen(
-                        modifier = Modifier.padding(innerPadding),
                         viewModel = sahaayViewModel,
                         initialTab = initialTab
                     )
