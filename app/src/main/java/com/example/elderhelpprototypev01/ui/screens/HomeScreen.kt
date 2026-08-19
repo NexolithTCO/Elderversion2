@@ -60,6 +60,7 @@ fun SahaayHomeScreen(
     var selectedBillType by remember { mutableStateOf<BillType?>(null) }
     var isSosModalOpen by remember { mutableStateOf(false) }
     var showEmergencyServicesModal by remember { mutableStateOf(false) }
+    var showSearchModal by remember { mutableStateOf(false) }
 
     // Reactive State from ViewModel
     val bookedAppointment by (viewModel?.bookedAppointment?.collectAsStateWithLifecycle()
@@ -245,7 +246,7 @@ fun SahaayHomeScreen(
                                         }
                                     )
                                     IconButton(onClick = {
-                                        Toast.makeText(context, "Search clicked", Toast.LENGTH_SHORT).show()
+                                        showSearchModal = true
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.Search,
@@ -414,6 +415,24 @@ fun SahaayHomeScreen(
                                 onPaymentSuccess = { payment ->
                                     viewModel?.recordBillPayment(payment)
                                     Toast.makeText(context, "₹${payment.amount} paid successfully!", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+
+                        if (showSearchModal) {
+                            GlobalSearchModal(
+                                onDismiss = { showSearchModal = false },
+                                currentLanguage = currentLanguage,
+                                onNavigateAction = { result ->
+                                    when (result.actionType) {
+                                        SearchActionType.OPEN_DOCTOR -> showDoctorModal = true
+                                        SearchActionType.OPEN_BILL_TYPE -> result.billType?.let { selectedBillType = it }
+                                        SearchActionType.OPEN_BILL_SELECTION -> showBillSelection = true
+                                        SearchActionType.OPEN_PENSION_FORM -> showPensionForm = true
+                                        SearchActionType.OPEN_EMERGENCY -> showEmergencyServicesModal = true
+                                        SearchActionType.OPEN_PROFILE -> showProfileModal = true
+                                        SearchActionType.SWITCH_TAB -> result.tabIndex?.let { selectedTab = it }
+                                    }
                                 }
                             )
                         }
