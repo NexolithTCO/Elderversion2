@@ -31,6 +31,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,111 +60,89 @@ import java.util.Locale
  *
  * Includes a 4-Way Senior-Friendly Payment System (UPI, Cards, Net Banking, Wallets).
  */
+/**
+ * 8. BILLS & UTILITIES (Page 6, 7)
+ *
+ * Clean 2×2 service grid:
+ * [ Electricity ]  [ Water ]
+ * [ Mobile ]       [ Gas ]
+ *
+ * Dimensions: height 104px, gap 12px, 16px radius, uniform #E4E7EC border.
+ * Icon containers: 42px softly tinted.
+ */
 @Composable
 fun PayBillsSection(
+    currentLanguage: String = "English (India)",
     onCategoryClick: (BillType) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isHindi = currentLanguage.contains("Hindi") || currentLanguage.contains("हिंदी")
+
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "Pay Bills & Utilities",
-                    style = Typography.titleLarge.copy(
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppleTextPrimary
-                    )
-                )
-                Text(
-                    text = "Instant 4-way secure payment system",
-                    style = Typography.bodySmall.copy(
-                        color = AppleTextMuted,
-                        fontSize = 12.sp
-                    )
-                )
-            }
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = Color(0xFFECFDF5),
-                border = BorderStroke(1.dp, Color(0xFFA7F3D0))
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("🛡️", fontSize = 11.sp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Safe Pay",
-                        style = Typography.labelSmall.copy(
-                            color = Color(0xFF059669),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.5.sp
-                        )
-                    )
-                }
-            }
-        }
+        // Section Header
+        Text(
+            text = if (isHindi) "उपयोगिता बिल भुगतान" else "Pay Bills & Utilities",
+            style = Typography.titleLarge.copy(
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppTextPrimary
+            )
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = if (isHindi) "सुरक्षित 4-तरीकों से तुरंत भुगतान" else "Quick 4-way secure bill payments",
+            style = Typography.bodySmall.copy(
+                color = AppTextMuted,
+                fontSize = 13.sp
+            )
+        )
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 4 Uniform Category Cards in a 2x2 Balanced Grid
+        // 2x2 Service Grid with 12px gap
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                BillCategoryCard(
+                ServiceGridItem(
                     type = BillType.ELECTRICITY,
-                    subLabel = "Power & Grid",
-                    color = Color(0xFFFFFBEB),
-                    borderColor = Color(0xFFFDE68A),
-                    accentColor = Color(0xFFD97706),
+                    title = if (isHindi) "बिजली" else "Electricity",
+                    subtitle = if (isHindi) "पावर व ग्रिड" else "Power & Grid",
+                    iconBg = TintElectricityBg,
                     onClick = { onCategoryClick(BillType.ELECTRICITY) },
                     modifier = Modifier.weight(1f)
                 )
-                BillCategoryCard(
+                ServiceGridItem(
                     type = BillType.WATER,
-                    subLabel = "Municipal & Jal",
-                    color = Color(0xFFF0F9FF),
-                    borderColor = Color(0xFFBAE6FD),
-                    accentColor = Color(0xFF0284C7),
+                    title = if (isHindi) "पानी" else "Water",
+                    subtitle = if (isHindi) "जल निगम व आपूर्ति" else "Municipal & Jal",
+                    iconBg = TintWaterBg,
                     onClick = { onCategoryClick(BillType.WATER) },
                     modifier = Modifier.weight(1f)
                 )
             }
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                BillCategoryCard(
+                ServiceGridItem(
                     type = BillType.MOBILE,
-                    subLabel = "Jio, Airtel, Vi",
-                    color = Color(0xFFFAF5FF),
-                    borderColor = Color(0xFFE9D5FF),
-                    accentColor = Color(0xFF7C3AED),
+                    title = if (isHindi) "मोबाइल" else "Mobile",
+                    subtitle = if (isHindi) "रिचार्ज और प्लान" else "Recharge & Plan",
+                    iconBg = TintMobileBg,
                     onClick = { onCategoryClick(BillType.MOBILE) },
                     modifier = Modifier.weight(1f)
                 )
-                BillCategoryCard(
+                ServiceGridItem(
                     type = BillType.GAS,
-                    subLabel = "Piped & Cylinder",
-                    color = Color(0xFFFFF7ED),
-                    borderColor = Color(0xFFFED7AA),
-                    accentColor = Color(0xFFEA580C),
+                    title = if (isHindi) "गैस / एलपीजी" else "Gas / LPG",
+                    subtitle = if (isHindi) "सिलेंडर व पाइप" else "Piped & Cylinder",
+                    iconBg = TintGasBg,
                     onClick = { onCategoryClick(BillType.GAS) },
                     modifier = Modifier.weight(1f)
                 )
@@ -171,12 +152,11 @@ fun PayBillsSection(
 }
 
 @Composable
-private fun BillCategoryCard(
+private fun ServiceGridItem(
     type: BillType,
-    subLabel: String,
-    color: Color,
-    borderColor: Color,
-    accentColor: Color,
+    title: String,
+    subtitle: String,
+    iconBg: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -184,60 +164,58 @@ private fun BillCategoryCard(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.96f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "billCardScale"
+        animationSpec = tween(120),
+        label = "serviceScale"
     )
 
     Surface(
         onClick = onClick,
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(18.dp),
-        color = AppleSurfaceWhite,
-        shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, AppleBorderSubtle),
+        shape = RoundedCornerShape(16.dp),
+        color = AppSurface,
+        border = BorderStroke(1.dp, AppBorder),
         modifier = modifier
             .scale(scale)
-            .height(118.dp)
+            .height(108.dp)
+            .semantics {
+                contentDescription = "$title bill payment, $subtitle. Tap to pay."
+            }
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(vertical = 12.dp, horizontal = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(color)
-                    .border(1.dp, borderColor, RoundedCornerShape(12.dp)),
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = type.iconEmoji, fontSize = 22.sp)
+                Text(text = type.iconEmoji, fontSize = 20.sp)
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = type.title.replace(" Bill", ""),
-                style = Typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = AppleTextPrimary,
-                    fontSize = 14.sp
+                text = title,
+                style = Typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = AppTextPrimary,
+                    fontSize = 15.sp
                 ),
-                textAlign = TextAlign.Center,
                 maxLines = 1
             )
             Spacer(modifier = Modifier.height(1.dp))
             Text(
-                text = subLabel,
+                text = subtitle,
                 style = Typography.bodySmall.copy(
-                    color = AppleTextMuted,
-                    fontSize = 11.sp
+                    color = AppTextSecondary,
+                    fontSize = 12.sp
                 ),
-                textAlign = TextAlign.Center,
                 maxLines = 1
             )
         }

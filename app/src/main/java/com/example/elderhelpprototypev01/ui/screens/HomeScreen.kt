@@ -168,40 +168,40 @@ fun SahaayHomeScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(scrollState)
-                                .padding(horizontal = 18.dp)
-                                .padding(top = 16.dp, bottom = 28.dp),
+                                .padding(horizontal = 20.dp)
+                                .padding(top = 16.dp, bottom = 36.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Top
                         ) {
-                            // 1. Top Header Row with Clickable Profile Button
+                            // 5. HEADER (Page 4 - Not in a card)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Profile Button & Greeting
+                                // Avatar + Greeting
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .weight(1f, fill = false)
-                                        .clip(RoundedCornerShape(16.dp))
+                                        .clip(RoundedCornerShape(12.dp))
                                         .clickable { showProfileModal = true }
-                                        .padding(4.dp)
+                                        .padding(vertical = 4.dp)
                                 ) {
+                                    // 40-44px circular subtle blue-tinted background
                                     Box(
                                         contentAlignment = Alignment.Center,
                                         modifier = Modifier
-                                            .size(44.dp)
+                                            .size(42.dp)
                                             .clip(CircleShape)
                                             .background(AppleBlueLight)
-                                            .border(1.5.dp, AppleBlueSubtle, CircleShape)
                                     ) {
                                         Text(
                                             text = if (userProfile.fullName.isNotBlank()) userProfile.fullName.take(1).uppercase() else "👤",
                                             style = Typography.titleMedium.copy(
-                                                color = AppleBlue,
+                                                color = AppPrimary,
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 18.sp
+                                                fontSize = 17.sp
                                             )
                                         )
                                     }
@@ -209,35 +209,26 @@ fun SahaayHomeScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
 
                                     Column(modifier = Modifier.weight(1f, fill = false)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = if (userProfile.fullName.isNotBlank()) {
-                                                    "${strings.greetingPrefix}, ${userProfile.fullName}"
-                                                } else {
-                                                    strings.welcomePill
-                                                },
-                                                style = Typography.titleLarge.copy(
-                                                    fontSize = 16.5.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = AppleTextPrimary
-                                                ),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Icon(
-                                                imageVector = Icons.Default.Edit,
-                                                contentDescription = "Edit Profile",
-                                                tint = AppleBlue,
-                                                modifier = Modifier.size(13.dp)
-                                            )
-                                        }
+                                        Text(
+                                            text = if (userProfile.fullName.isNotBlank()) {
+                                                "${strings.greetingPrefix} ${userProfile.fullName}"
+                                            } else {
+                                                strings.welcomePill
+                                            },
+                                            style = Typography.titleMedium.copy(
+                                                fontSize = 17.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = AppTextPrimary
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                         Spacer(modifier = Modifier.height(1.dp))
                                         Text(
-                                            text = "Sahaay Voice Companion",
+                                            text = if (currentLanguage.contains("Hindi") || currentLanguage.contains("हिंदी")) "सहाय वॉयस साथी" else "Sahaay Voice Companion",
                                             style = Typography.bodySmall.copy(
-                                                fontSize = 12.sp,
-                                                color = AppleTextMuted
+                                                fontSize = 12.5.sp,
+                                                color = AppTextMuted
                                             ),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
@@ -245,9 +236,9 @@ fun SahaayHomeScreen(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
 
-                                // Language Toggle Pill & Search
+                                // Language Segmented Control + 40px Search Button
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.End
@@ -255,41 +246,37 @@ fun SahaayHomeScreen(
                                     LanguageTogglePill(
                                         currentLanguage = currentLanguage,
                                         onToggle = {
-                                            currentLanguage = if (currentLanguage.contains("Hindi")) {
+                                            currentLanguage = if (currentLanguage.contains("Hindi") || currentLanguage.contains("हिंदी")) {
                                                 "English (India)"
                                             } else {
                                                 "Hindi (हिंदी)"
                                             }
                                         }
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = AppleSurfaceWhite,
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, AppleBorderSubtle),
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Box(
+                                        contentAlignment = Alignment.Center,
                                         modifier = Modifier
-                                            .size(38.dp)
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(AppSurface)
+                                            .border(1.dp, AppBorder, CircleShape)
                                             .clickable { showSearchModal = true }
                                     ) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier.fillMaxSize()
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Search,
-                                                contentDescription = "Search",
-                                                tint = AppleTextPrimary,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = "Search",
+                                            tint = AppTextPrimary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
                                     }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                            // 2. Hero Voice Assistant Banner (Direct Voice Access)
-                            MicrophoneButton(
+                            // 6. VOICE HERO — MOST IMPORTANT COMPONENT (Page 5)
+                            VoiceHero(
                                 isListening = false,
                                 currentLanguage = currentLanguage,
                                 onClick = {
@@ -299,28 +286,39 @@ fun SahaayHomeScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(modifier = Modifier.height(18.dp))
+                            Spacer(modifier = Modifier.height(28.dp))
 
-                            // 3. Featured Task: Doctor Booking Widget
-                            DoctorBookingWidget(
+                            // 7. CURRENT APPOINTMENTS & DOCTOR CONSULTATION (Segregated)
+                            DoctorAppointmentsSection(
                                 appointment = bookedAppointment,
-                                onClick = { showDoctorModal = true },
+                                currentLanguage = currentLanguage,
+                                onDoctorClick = { showDoctorModal = true },
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(modifier = Modifier.height(20.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                            // 4. Pay Bills & Utilities Section
+                            // 8. 24/7 EMERGENCY ASSISTANCE (Segregated)
+                            EmergencyQuickSection(
+                                currentLanguage = currentLanguage,
+                                onEmergencyClick = { isSosModalOpen = true },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(28.dp))
+
+                            // 9. BILLS & UTILITIES — 2x2 Clean Service Grid (Page 6, 7)
                             PayBillsSection(
+                                currentLanguage = currentLanguage,
                                 onCategoryClick = { type ->
                                     selectedBillType = type
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(modifier = Modifier.height(20.dp))
+                            Spacer(modifier = Modifier.height(28.dp))
 
-                            // 5. Explore Services & Help Grid
+                            // 9. QUICK TASKS — Editorial Action List (Page 7, 8)
                             QuickActionsSection(
                                 currentLanguage = currentLanguage,
                                 onActionClick = { action ->
@@ -412,12 +410,14 @@ fun SahaayHomeScreen(
                         if (showPensionForm) {
                             PensionFormScreen(
                                 userProfile = userProfile,
+                                currentLanguage = currentLanguage,
                                 onDismiss = { showPensionForm = false }
                             )
                         }
 
                         if (showBillSelection) {
                             BillSelectionModal(
+                                currentLanguage = currentLanguage,
                                 onDismiss = { showBillSelection = false },
                                 onSelectBillType = { type ->
                                     selectedBillType = type

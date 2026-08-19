@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -36,9 +35,26 @@ import com.example.elderhelpprototypev01.ui.theme.*
 
 data class NavItem(
     val title: String,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val isVoice: Boolean = false
 )
 
+/**
+ * 12. BOTTOM NAVIGATION (Page 10, 11)
+ *
+ * Fixed bottom navigation:
+ * Height: 64px + safe-area inset
+ * Structure: Home | Voice | Transactions | Settings
+ *
+ * Active state:
+ * - Blue icon (#0875E1)
+ * - Blue label
+ * - Soft blue circular/rounded background pill
+ *
+ * Inactive state:
+ * - Gray icon (#667085)
+ * - Gray label
+ */
 @Composable
 fun BottomNavigationBar(
     selectedTab: Int = 0,
@@ -50,26 +66,26 @@ fun BottomNavigationBar(
 
     val items = listOf(
         NavItem(strings.navHome, Icons.Default.Home),
-        NavItem(strings.navVoice, Icons.Default.Mic),
+        NavItem(strings.navVoice, Icons.Default.Mic, isVoice = true),
         NavItem(strings.navTransactions, Icons.AutoMirrored.Filled.ReceiptLong),
         NavItem(strings.navSettings, Icons.Default.Settings)
     )
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = AppleSurfaceWhite,
-        shadowElevation = 10.dp,
-        tonalElevation = 2.dp
+        color = AppSurface,
+        shadowElevation = 0.dp
     ) {
         Column {
             HorizontalDivider(
-                color = AppleBorderSubtle,
-                thickness = 0.8.dp
+                color = AppBorder,
+                thickness = 1.dp
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                    .height(64.dp)
+                    .padding(horizontal = 8.dp)
                     .navigationBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
@@ -78,14 +94,14 @@ fun BottomNavigationBar(
                     val isSelected = index == selectedTab
 
                     val animatedIconTint by animateColorAsState(
-                        targetValue = if (isSelected) AppleBlue else AppleTextMuted,
-                        animationSpec = tween(250),
+                        targetValue = if (isSelected) AppPrimary else AppTextSecondary,
+                        animationSpec = tween(150),
                         label = "navIconTint"
                     )
 
                     val animatedPillBg by animateColorAsState(
                         targetValue = if (isSelected) AppleBlueLight else Color.Transparent,
-                        animationSpec = tween(250),
+                        animationSpec = tween(150),
                         label = "navPillBg"
                     )
 
@@ -93,8 +109,9 @@ fun BottomNavigationBar(
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .clickable(
                                 interactionSource = interactionSource,
                                 indication = null,
@@ -102,24 +119,24 @@ fun BottomNavigationBar(
                                 onClick = { onTabSelected(index) }
                             )
                             .semantics {
-                                contentDescription = "${item.title} tab, ${if (isSelected) "selected" else "not selected"}"
+                                contentDescription = "${item.title} tab, ${if (isSelected) "active" else "inactive"}"
                             }
-                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
-                        // Pill background for active tab
+                        // Soft blue rounded background pill for active tab
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .height(34.dp)
-                                .width(56.dp)
-                                .clip(RoundedCornerShape(17.dp))
+                                .height(32.dp)
+                                .width(52.dp)
+                                .clip(RoundedCornerShape(16.dp))
                                 .background(animatedPillBg)
                         ) {
                             Icon(
                                 imageVector = item.icon,
                                 contentDescription = null,
                                 tint = animatedIconTint,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
@@ -128,9 +145,9 @@ fun BottomNavigationBar(
                         Text(
                             text = item.title,
                             style = Typography.bodySmall.copy(
-                                color = if (isSelected) AppleBlue else AppleTextMuted,
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                color = if (isSelected) AppPrimary else AppTextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                             ),
                             maxLines = 1
                         )

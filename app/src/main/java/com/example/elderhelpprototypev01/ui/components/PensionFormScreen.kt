@@ -38,8 +38,11 @@ import com.example.elderhelpprototypev01.ui.theme.*
 @Composable
 fun PensionFormScreen(
     userProfile: UserProfile,
+    currentLanguage: String = "English (India)",
     onDismiss: () -> Unit
 ) {
+    val isHindi = currentLanguage.contains("Hindi") || currentLanguage.contains("हिंदी")
+
     // Pre-filled from UserProfile
     var fullName by remember { mutableStateOf(userProfile.fullName) }
     var phoneNumber by remember { mutableStateOf(userProfile.contactNumber) }
@@ -55,7 +58,12 @@ fun PensionFormScreen(
 
     val scrollState = rememberScrollState()
 
-    val pensionSchemes = listOf(
+    val pensionSchemes = if (isHindi) listOf(
+        "वृद्धावस्था पेंशन (Vriddha)",
+        "विधवा पेंशन (Vidhwa)",
+        "दिव्यांग पेंशन (Divyang)",
+        "राष्ट्रीय सामाजिक सहायता"
+    ) else listOf(
         "Old Age Pension (Vriddha)",
         "Widow Pension (Vidhwa)",
         "Disability Pension (Divyang)",
@@ -71,7 +79,7 @@ fun PensionFormScreen(
                 .fillMaxSize()
                 .padding(top = 40.dp),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            color = AppleCanvasBg
+            color = AppBackground
         ) {
             Column(
                 modifier = Modifier
@@ -89,7 +97,7 @@ fun PensionFormScreen(
                             modifier = Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFFFF3E0)),
+                                .background(TintGasBg),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("📋", fontSize = 22.sp)
@@ -97,16 +105,16 @@ fun PensionFormScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "Pension Application",
+                                text = if (isHindi) "पेंशन आवेदन पत्र" else "Pension Application",
                                 style = Typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = AppleTextPrimary,
+                                    color = AppTextPrimary,
                                     fontSize = 19.sp
                                 )
                             )
                             Text(
-                                text = "Government Welfare Scheme",
-                                style = Typography.bodySmall.copy(color = AppleTextMuted)
+                                text = if (isHindi) "सरकारी कल्याणकारी योजना" else "Government Welfare Scheme",
+                                style = Typography.bodySmall.copy(color = AppTextSecondary)
                             )
                         }
                     }

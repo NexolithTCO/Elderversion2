@@ -33,46 +33,49 @@ import com.example.elderhelpprototypev01.ui.theme.*
  * BillSelectionModal
  *
  * Intermediate selection screen displayed when tapping "Pay" in Quick Tasks.
- * Shows all three payment options as uniform cards. Tapping one navigates
+ * Shows all four payment options as uniform cards. Tapping one navigates
  * directly to that type's BillPaymentModal.
  */
 @Composable
 fun BillSelectionModal(
+    currentLanguage: String = "English (India)",
     onDismiss: () -> Unit,
     onSelectBillType: (BillType) -> Unit
 ) {
+    val isHindi = currentLanguage.contains("Hindi") || currentLanguage.contains("हिंदी")
+
     val billOptions = listOf(
         BillOption(
             type = BillType.ELECTRICITY,
             emoji = "⚡",
-            label = "Electricity Bill",
-            hint = "Consumer ID",
-            bgColor = Color(0xFFFFF8E1),
-            accentColor = Color(0xFFFFB300)
+            label = if (isHindi) "बिजली बिल" else "Electricity Bill",
+            hint = if (isHindi) "उपभोक्ता संख्या (Consumer ID)" else "Consumer ID",
+            bgColor = TintElectricityBg,
+            accentColor = TintElectricityIcon
         ),
         BillOption(
             type = BillType.WATER,
             emoji = "💧",
-            label = "Water Bill",
-            hint = "Meter ID",
-            bgColor = Color(0xFFE1F5FE),
-            accentColor = Color(0xFF0288D1)
+            label = if (isHindi) "पानी बिल" else "Water Bill",
+            hint = if (isHindi) "मीटर संख्या (Meter ID)" else "Meter ID",
+            bgColor = TintWaterBg,
+            accentColor = TintWaterIcon
         ),
         BillOption(
             type = BillType.MOBILE,
             emoji = "📱",
-            label = "Mobile Recharge",
-            hint = "Mobile Number",
-            bgColor = Color(0xFFF3E5F5),
-            accentColor = Color(0xFF8E24AA)
+            label = if (isHindi) "मोबाइल रिचार्ज" else "Mobile Recharge",
+            hint = if (isHindi) "मोबाइल नंबर (Mobile Number)" else "Mobile Number",
+            bgColor = TintMobileBg,
+            accentColor = TintMobileIcon
         ),
         BillOption(
             type = BillType.GAS,
             emoji = "🔥",
-            label = "Gas Bill",
-            hint = "Consumer / LPG ID",
-            bgColor = Color(0xFFFFF3E0),
-            accentColor = Color(0xFFFF9800)
+            label = if (isHindi) "गैस बिल" else "Gas Bill",
+            hint = if (isHindi) "उपभोक्ता संख्या / LPG ID" else "Consumer / LPG ID",
+            bgColor = TintGasBg,
+            accentColor = TintGasIcon
         )
     )
 
@@ -87,7 +90,7 @@ fun BillSelectionModal(
                 .fillMaxSize()
                 .padding(top = 40.dp),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            color = AppleCanvasBg
+            color = AppBackground
         ) {
             Column(
                 modifier = Modifier
@@ -106,7 +109,7 @@ fun BillSelectionModal(
                             modifier = Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFE8F5E9)),
+                                .background(Color(0xFFDCFCE7)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("💳", fontSize = 22.sp)
@@ -114,16 +117,16 @@ fun BillSelectionModal(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "Pay Bills & Utilities",
+                                text = if (isHindi) "उपयोगिता बिल भुगतान" else "Pay Bills & Utilities",
                                 style = Typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = AppleTextPrimary,
+                                    color = AppTextPrimary,
                                     fontSize = 19.sp
                                 )
                             )
                             Text(
-                                text = "Select a category to continue",
-                                style = Typography.bodySmall.copy(color = AppleTextMuted)
+                                text = if (isHindi) "जारी रखने के लिए श्रेणी चुनें" else "Select a category to continue",
+                                style = Typography.bodySmall.copy(color = AppTextSecondary)
                             )
                         }
                     }
@@ -133,70 +136,78 @@ fun BillSelectionModal(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(AppleBorderSubtle.copy(alpha = 0.5f))
+                            .background(AppBorder.copy(alpha = 0.5f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = AppleTextPrimary,
-                            modifier = Modifier.size(18.dp)
+                            tint = AppTextPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // 3 Uniform Bill Option Cards
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    billOptions.forEach { option ->
-                        BillSelectionCard(
-                            option = option,
-                            onClick = {
-                                onSelectBillType(option.type)
-                                onDismiss()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Safe & Instant badge
+                // Info banner
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    color = Color(0xFFF0F9FF),
-                    border = BorderStroke(1.dp, Color(0xFF0288D1).copy(alpha = 0.25f))
+                    color = AppleBlueLight,
+                    border = BorderStroke(1.dp, AppleBlueSubtle),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("🔒", fontSize = 16.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("🛡️", fontSize = 20.sp)
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "All payments are encrypted & instant",
+                            text = if (isHindi) "भारत बिलपे द्वारा सुरक्षित • रसीद तुरंत प्राप्त होगी" else "Instant receipt generated • BBPS Verified Safe",
                             style = Typography.bodySmall.copy(
-                                color = Color(0xFF0277BD),
+                                color = AppPrimary,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 13.sp
                             )
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 4 Category Cards
+                billOptions.forEach { option ->
+                    BillOptionCard(
+                        option = option,
+                        onClick = {
+                            onDismiss()
+                            onSelectBillType(option.type)
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Cancel Button
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.5.dp, AppBorder),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppTextSecondary),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                ) {
+                    Text(
+                        text = if (isHindi) "रद्द करें" else "Cancel",
+                        style = Typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                }
             }
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────
-// Internal Data Model
-// ─────────────────────────────────────────────────────────────────
 
 private data class BillOption(
     val type: BillType,
@@ -207,92 +218,86 @@ private data class BillOption(
     val accentColor: Color
 )
 
-// ─────────────────────────────────────────────────────────────────
-// Uniform Bill Selection Card
-// Identical dimensions: fillMaxWidth, height(96.dp), padding(16.dp)
-// ─────────────────────────────────────────────────────────────────
-
 @Composable
-private fun BillSelectionCard(
+private fun BillOptionCard(
     option: BillOption,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.97f else 1.0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "billCardScale"
+        label = "cardScale"
     )
 
     Surface(
         onClick = onClick,
-        modifier = modifier
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(18.dp),
+        color = AppSurface,
+        border = BorderStroke(1.dp, AppBorder),
+        modifier = Modifier
+            .fillMaxWidth()
             .scale(scale)
-            .height(96.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = Color.White,
-        shadowElevation = 3.dp,
-        border = BorderStroke(1.dp, option.accentColor.copy(alpha = 0.3f)),
-        interactionSource = interactionSource
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Uniform icon area
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(option.bgColor),
-                contentAlignment = Alignment.Center
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
-                Text(option.emoji, fontSize = 28.sp)
-            }
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(option.bgColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(option.emoji, fontSize = 26.sp)
+                }
 
-            Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(16.dp))
 
-            // Text info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = option.label,
-                    style = Typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = AppleTextPrimary,
-                        fontSize = 17.sp
-                    )
-                )
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(
-                    text = "Enter ${option.hint} to pay",
-                    style = Typography.bodySmall.copy(
-                        color = AppleTextMuted,
-                        fontSize = 13.sp
-                    )
-                )
-            }
-
-            // Arrow indicator
-            Surface(
-                shape = CircleShape,
-                color = option.accentColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(36.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
+                Column {
                     Text(
-                        text = "›",
-                        style = Typography.titleLarge.copy(
-                            color = option.accentColor,
+                        text = option.label,
+                        style = Typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
+                            color = AppTextPrimary,
+                            fontSize = 16.sp
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = option.hint,
+                        style = Typography.bodySmall.copy(
+                            color = AppTextSecondary,
+                            fontSize = 13.sp
                         )
                     )
                 }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = AppleBlueLight,
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text(
+                    text = "Pay →",
+                    style = Typography.labelMedium.copy(
+                        color = AppPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
             }
         }
     }

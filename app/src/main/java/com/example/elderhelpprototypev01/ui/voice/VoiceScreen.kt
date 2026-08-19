@@ -4,6 +4,7 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -56,6 +57,8 @@ fun VoiceScreen(
     val ttsEnabled by viewModel.ttsEnabled.collectAsStateWithLifecycle()
     val speechRate by viewModel.speechRate.collectAsStateWithLifecycle()
     val isWakeWordActive by viewModel.isWakeWordActive.collectAsStateWithLifecycle()
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val isHindi = currentLanguage.contains("Hindi") || currentLanguage.contains("हिंदी")
 
     val scrollState = rememberScrollState()
 
@@ -80,9 +83,9 @@ fun VoiceScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(AppleCanvasBg)
+            .background(AppBackground)
             .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 20.dp)
             .padding(top = 16.dp, bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -98,14 +101,14 @@ fun VoiceScreen(
                     text = "Sahaay",
                     style = Typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = AppleTextPrimary,
+                        color = AppTextPrimary,
                         fontSize = 28.sp
                     )
                 )
                 Text(
-                    text = "Your voice assistant",
+                    text = if (isHindi) "आपकी आवाज़ का साथी" else "Your voice companion",
                     style = Typography.bodyMedium.copy(
-                        color = AppleTextMuted,
+                        color = AppTextSecondary,
                         fontSize = 14.sp
                     )
                 )
@@ -120,7 +123,7 @@ fun VoiceScreen(
                     Icon(
                         imageVector = Icons.Default.DeleteSweep,
                         contentDescription = "Clear conversation",
-                        tint = AppleTextMuted,
+                        tint = AppTextMuted,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -150,11 +153,12 @@ fun VoiceScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFFFFF3E0)
+                color = Color(0xFFFFF3E0),
+                border = BorderStroke(1.dp, Color(0xFFFFB74D))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "🎙️ Microphone permission needed",
+                        text = if (isHindi) "🎙️ माइक्रोफ़ोन की अनुमति आवश्यक है" else "🎙️ Microphone permission needed",
                         style = Typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFE65100),
@@ -163,10 +167,10 @@ fun VoiceScreen(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Sahaay needs to hear your voice to help you. Please allow microphone access.",
+                        text = if (isHindi) "सहाय को आपकी आवाज़ सुनने के लिए अनुमति दें।" else "Sahaay needs to hear your voice to help you. Please allow microphone access.",
                         style = Typography.bodyMedium.copy(
-                            color = AppleTextSecondary,
-                            fontSize = 15.sp
+                            color = AppTextSecondary,
+                            fontSize = 14.sp
                         )
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -181,7 +185,7 @@ fun VoiceScreen(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Allow Microphone Access", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(if (isHindi) "अनुमति दें" else "Allow Microphone Access", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
                 }
             }
@@ -192,6 +196,7 @@ fun VoiceScreen(
         VoiceInputPanel(
             voiceState = voiceState,
             transcript = transcript,
+            currentLanguage = currentLanguage,
             onMicClick = {
                 if (viewModel.hasMicPermission()) {
                     viewModel.startListening()
@@ -240,9 +245,9 @@ fun VoiceScreen(
             Column(modifier = Modifier.fillMaxWidth()) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Conversation",
+                    text = if (isHindi) "बातचीत का इतिहास" else "Conversation",
                     style = Typography.labelMedium.copy(
-                        color = AppleTextMuted,
+                        color = AppTextMuted,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         letterSpacing = 1.sp

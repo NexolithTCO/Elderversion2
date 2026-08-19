@@ -1,11 +1,15 @@
 package com.example.elderhelpprototypev01.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.LocalPolice
 import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,12 +34,13 @@ data class QuickActionItem(
 )
 
 /**
- * Explore Tasks & Services section:
+ * Editorial-Style Quick Tasks & Services Section:
  *
- * [ 👨‍⚕️ Book Doctor → ]
- * [ 💡 Pay Bills → ]
- * [ 📄 Government Forms & Pension → ]
- * [ 🚨 Emergency Assistance → ]
+ * Clean grouped list with subtle dividers:
+ * - 👨‍⚕️ Book Doctor Consultation
+ * - 💡 Pay Utility Bills
+ * - 📄 Government Forms & Pension
+ * - 🚨 24/7 Emergency Assistance
  */
 @Composable
 fun QuickActionsSection(
@@ -88,52 +93,56 @@ fun QuickActionsSection(
         )
     )
 
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         // Section Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = strings.exploreTasks,
-                    style = Typography.titleLarge.copy(
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppleTextPrimary
-                    )
-                )
-                Text(
-                    text = "Quick shortcuts to all Sahaay features",
-                    style = Typography.bodySmall.copy(
-                        color = AppleTextMuted,
-                        fontSize = 12.sp
-                    )
-                )
-            }
-        }
+        Text(
+            text = strings.exploreTasks,
+            style = Typography.titleMedium.copy(
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppleTextPrimary
+            )
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = if (currentLanguage.contains("Hindi")) "आपातकालीन और दैनिक सेवाएं" else "Essential daily services and assistance",
+            style = Typography.bodySmall.copy(
+                color = AppleTextMuted,
+                fontSize = 13.sp
+            )
+        )
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Clean Vertical Stack
-        Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        // Grouped Editorial Surface (16px radius, uniform #E4E7EC border)
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = AppSurface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, AppBorder),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            actions.forEach { item ->
-                QuickActionCard(
-                    title = item.title,
-                    subtitle = item.subtitle,
-                    actionButtonText = item.buttonText,
-                    icon = item.icon,
-                    iconTint = item.iconTint,
-                    iconBgColor = item.iconBgColor,
-                    emoji = item.emoji,
-                    onClick = { onActionClick(item) },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                actions.forEachIndexed { index, item ->
+                    val isEmergency = item.id == "emergency"
+                    QuickActionRowItem(
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        icon = item.icon,
+                        iconTint = item.iconTint,
+                        iconBgColor = item.iconBgColor,
+                        emoji = item.emoji,
+                        isEmergency = isEmergency,
+                        onClick = { onActionClick(item) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (index < actions.lastIndex) {
+                        HorizontalDivider(
+                            color = AppleBorderSubtle,
+                            thickness = 0.6.dp,
+                            modifier = Modifier.padding(start = 60.dp)
+                        )
+                    }
+                }
             }
         }
     }

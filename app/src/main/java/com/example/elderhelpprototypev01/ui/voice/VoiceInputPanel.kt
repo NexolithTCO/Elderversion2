@@ -34,10 +34,12 @@ import com.example.elderhelpprototypev01.ui.theme.*
 fun VoiceInputPanel(
     voiceState: VoiceState,
     transcript: String,
+    currentLanguage: String = "English (India)",
     onMicClick: () -> Unit,
     onStopClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isHindi = currentLanguage.contains("Hindi") || currentLanguage.contains("हिंदी")
     val isListening = voiceState is VoiceState.Listening || voiceState is VoiceState.PartialResult
     val isProcessing = voiceState is VoiceState.Processing
 
@@ -60,12 +62,12 @@ fun VoiceInputPanel(
 
         // ---- State Label ----
         val stateText = when (voiceState) {
-            is VoiceState.Idle -> "Tap the microphone to speak"
-            is VoiceState.RequestingPermission -> "Microphone permission needed"
-            is VoiceState.Listening -> "I'm listening..."
-            is VoiceState.PartialResult -> "I'm listening..."
-            is VoiceState.Processing -> "Thinking..."
-            is VoiceState.Done -> "Done! Tap again to speak"
+            is VoiceState.Idle -> if (isHindi) "बोलने के लिए माइक दबाएं" else "Tap the microphone to speak"
+            is VoiceState.RequestingPermission -> if (isHindi) "माइक्रोफ़ोन अनुमति आवश्यक है" else "Microphone permission needed"
+            is VoiceState.Listening -> if (isHindi) "मैं सुन रहा हूँ..." else "I'm listening..."
+            is VoiceState.PartialResult -> if (isHindi) "मैं सुन रहा हूँ..." else "I'm listening..."
+            is VoiceState.Processing -> if (isHindi) "विचार कर रहा हूँ..." else "Thinking..."
+            is VoiceState.Done -> if (isHindi) "हो गया! दोबारा बोलने के लिए टैप करें" else "Done! Tap again to speak"
             is VoiceState.Error -> voiceState.message
         }
 
