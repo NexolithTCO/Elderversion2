@@ -179,42 +179,45 @@ fun SahaayHomeScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Profile Button & Greeting (weighted so right action buttons never clip off screen)
+                                // Profile Button & Greeting
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .weight(1f, fill = false)
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .clip(RoundedCornerShape(16.dp))
                                         .clickable { showProfileModal = true }
                                         .padding(4.dp)
                                 ) {
                                     Box(
                                         contentAlignment = Alignment.Center,
                                         modifier = Modifier
-                                            .size(42.dp)
+                                            .size(44.dp)
                                             .clip(CircleShape)
                                             .background(AppleBlueLight)
+                                            .border(1.5.dp, AppleBlueSubtle, CircleShape)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = "Profile",
-                                            tint = AppleBlue,
-                                            modifier = Modifier.size(24.dp)
+                                        Text(
+                                            text = if (userProfile.fullName.isNotBlank()) userProfile.fullName.take(1).uppercase() else "👤",
+                                            style = Typography.titleMedium.copy(
+                                                color = AppleBlue,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 18.sp
+                                            )
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
 
                                     Column(modifier = Modifier.weight(1f, fill = false)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
                                                 text = if (userProfile.fullName.isNotBlank()) {
-                                                    "${strings.greetingPrefix} ${userProfile.fullName}"
+                                                    "${strings.greetingPrefix}, ${userProfile.fullName}"
                                                 } else {
                                                     strings.welcomePill
                                                 },
                                                 style = Typography.titleLarge.copy(
-                                                    fontSize = 16.sp,
+                                                    fontSize = 16.5.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = AppleTextPrimary
                                                 ),
@@ -226,12 +229,13 @@ fun SahaayHomeScreen(
                                                 imageVector = Icons.Default.Edit,
                                                 contentDescription = "Edit Profile",
                                                 tint = AppleBlue,
-                                                modifier = Modifier.size(14.dp)
+                                                modifier = Modifier.size(13.dp)
                                             )
                                         }
+                                        Spacer(modifier = Modifier.height(1.dp))
                                         Text(
-                                            text = "Sahaay Voice Assistant",
-                                            style = Typography.bodyMedium.copy(
+                                            text = "Sahaay Voice Companion",
+                                            style = Typography.bodySmall.copy(
                                                 fontSize = 12.sp,
                                                 color = AppleTextMuted
                                             ),
@@ -241,14 +245,13 @@ fun SahaayHomeScreen(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
 
-                                // Quick Action Icons + Language Toggle
+                                // Language Toggle Pill & Search
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.End
                                 ) {
-                                    // Language Toggle Pill: taps between English and Hindi
                                     LanguageTogglePill(
                                         currentLanguage = currentLanguage,
                                         onToggle = {
@@ -259,45 +262,55 @@ fun SahaayHomeScreen(
                                             }
                                         }
                                     )
-                                    IconButton(
-                                        onClick = { showSearchModal = true },
-                                        modifier = Modifier.size(38.dp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = AppleSurfaceWhite,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, AppleBorderSubtle),
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .clickable { showSearchModal = true }
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Search,
-                                            contentDescription = "Search",
-                                            tint = AppleTextPrimary,
-                                            modifier = Modifier.size(22.dp)
-                                        )
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier.fillMaxSize()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Search,
+                                                contentDescription = "Search",
+                                                tint = AppleTextPrimary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // 2. Featured Quick Task: Doctor Booking Widget
+                            // 2. Hero Voice Assistant Banner (Direct Voice Access)
+                            MicrophoneButton(
+                                isListening = false,
+                                currentLanguage = currentLanguage,
+                                onClick = {
+                                    selectedTab = 1
+                                    viewModel?.startListening()
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(18.dp))
+
+                            // 3. Featured Task: Doctor Booking Widget
                             DoctorBookingWidget(
                                 appointment = bookedAppointment,
                                 onClick = { showDoctorModal = true },
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(modifier = Modifier.height(18.dp))
-
-                            // 4. Hero Voice Assistant Banner (Direct Voice Access)
-                            MicrophoneButton(
-                                isListening = false,
-                                currentLanguage = currentLanguage,
-                                onClick = {
-                                    selectedTab = 1 // Switch to Voice Screen directly
-                                    viewModel?.startListening()
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // 5. Expanded Pay Bills Section (Electricity, Water, Mobile Recharge)
+                            // 4. Pay Bills & Utilities Section
                             PayBillsSection(
                                 onCategoryClick = { type ->
                                     selectedBillType = type
@@ -307,7 +320,7 @@ fun SahaayHomeScreen(
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // 6. Quick Services Grid
+                            // 5. Explore Services & Help Grid
                             QuickActionsSection(
                                 currentLanguage = currentLanguage,
                                 onActionClick = { action ->
@@ -494,33 +507,52 @@ fun LanguageTogglePill(
     modifier: Modifier = Modifier
 ) {
     val isHindi = currentLanguage.contains("Hindi")
-    val label = if (isHindi) "अ" else "A"
     val accessibilityLabel = if (isHindi) "Switch to English" else "हिंदी में बदलें"
 
     Surface(
-        shape = RoundedCornerShape(50),
-        color = if (isHindi) AppleBlue else Color.Transparent,
-        border = if (!isHindi) {
-            androidx.compose.foundation.BorderStroke(1.5.dp, AppleBlue.copy(alpha = 0.6f))
-        } else null,
+        shape = RoundedCornerShape(14.dp),
+        color = AppleSurfaceWhite,
+        border = androidx.compose.foundation.BorderStroke(1.dp, AppleBorderSubtle),
         modifier = modifier
             .semantics { contentDescription = accessibilityLabel }
             .clickable(onClick = onToggle)
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-                .defaultMinSize(minWidth = 36.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(3.dp)
         ) {
-            Text(
-                text = label,
-                style = Typography.labelLarge.copy(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isHindi) Color.White else AppleBlue
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (!isHindi) AppleBlue else Color.Transparent)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "EN",
+                    style = Typography.labelSmall.copy(
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (!isHindi) Color.White else AppleTextMuted
+                    )
                 )
-            )
+            }
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (isHindi) AppleBlue else Color.Transparent)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "अ",
+                    style = Typography.labelSmall.copy(
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isHindi) Color.White else AppleTextMuted
+                    )
+                )
+            }
         }
     }
 }

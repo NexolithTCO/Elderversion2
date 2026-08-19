@@ -1,6 +1,7 @@
 package com.example.elderhelpprototypev01.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -43,6 +47,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     val strings = Localization.getStrings(currentLanguage)
+    val isHindi = currentLanguage.contains("Hindi")
 
     var highContrastText by remember { mutableStateOf(true) }
     var voiceFeedback by remember { mutableStateOf(true) }
@@ -69,65 +74,145 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 18.dp)
-                .padding(top = 20.dp, bottom = 32.dp)
+                .padding(top = 20.dp, bottom = 36.dp)
         ) {
-            // Settings Title Header
+            // Header
             Text(
                 text = strings.settingsTitle,
                 style = Typography.headlineLarge.copy(
-                    fontSize = 32.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppleTextPrimary
                 )
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = strings.settingsSubtitle,
+                text = if (isHindi) "सरल नियंत्रण, सुरक्षा और भाषा सेटिंग्स" else "Accessibility, safety & language preferences",
                 style = Typography.bodyMedium.copy(
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     color = AppleTextMuted
                 )
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            // Section 1: Accessibility & Assistance
-            SettingsSectionTitle(title = "ACCESSIBILITY & VOICE")
-
+            // User Identity Profile Card
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, AppleBorderSubtle, RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
+                    .clickable { onEditProfileClick?.invoke() },
+                shape = RoundedCornerShape(22.dp),
                 color = AppleSurfaceWhite,
-                shadowElevation = 2.dp
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, AppleBorderSubtle)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(AppleBlueLight)
+                            .border(1.5.dp, AppleBlueSubtle, CircleShape)
+                    ) {
+                        Text(
+                            text = if (userProfile.fullName.isNotBlank()) userProfile.fullName.take(1).uppercase() else "👤",
+                            style = Typography.titleLarge.copy(
+                                color = AppleBlue,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 22.sp
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (userProfile.fullName.isNotBlank()) userProfile.fullName else "Senior User",
+                            style = Typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = AppleTextPrimary,
+                                fontSize = 17.sp
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (userProfile.contactNumber.isNotBlank()) userProfile.contactNumber else "Tap to complete profile",
+                            style = Typography.bodySmall.copy(
+                                color = AppleTextMuted,
+                                fontSize = 13.sp
+                            )
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = AppleBlueLight
+                    ) {
+                        Text(
+                            text = "Edit",
+                            style = Typography.labelMedium.copy(
+                                color = AppleBlue,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            // Section 1: Accessibility & Voice
+            SettingsSectionTitle(title = if (isHindi) "सुगमता एवं आवाज़" else "ACCESSIBILITY & VOICE")
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                color = AppleSurfaceWhite,
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, AppleBorderSubtle)
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                     SettingsSwitchRow(
-                        title = "Large Readability Fonts",
-                        subtitle = "Increased font contrast for easy reading",
+                        title = "Large Clear Fonts",
+                        subtitle = "Crisp contrast for comfortable reading",
                         icon = Icons.Default.FormatSize,
+                        iconTint = Color(0xFF0284C7),
+                        iconBg = Color(0xFFE0F2FE),
                         checked = highContrastText,
                         onCheckedChange = {
                             highContrastText = it
                             Toast.makeText(context, "Readability updated", Toast.LENGTH_SHORT).show()
                         }
                     )
-                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
+                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.8.dp)
                     SettingsSwitchRow(
                         title = "Voice Speech Feedback",
-                        subtitle = "Speak aloud button actions & confirmations",
+                        subtitle = "Read aloud button actions & confirmations",
                         icon = Icons.AutoMirrored.Filled.VolumeUp,
+                        iconTint = Color(0xFF7C3AED),
+                        iconBg = Color(0xFFF5F3FF),
                         checked = voiceFeedback,
                         onCheckedChange = {
                             voiceFeedback = it
                             Toast.makeText(context, "Voice feedback updated", Toast.LENGTH_SHORT).show()
                         }
                     )
-                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
+                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.8.dp)
                     SettingsSwitchRow(
                         title = "Simplified Easy Mode",
-                        subtitle = "Hide extra options & enlarge touch icons",
+                        subtitle = "Enlarge touch targets & reduce options",
                         icon = Icons.Default.TouchApp,
+                        iconTint = Color(0xFF059669),
+                        iconBg = Color(0xFFECFDF5),
                         checked = simpleMode,
                         onCheckedChange = {
                             simpleMode = it
@@ -137,30 +222,30 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            // Section 2: Personal & Emergency Contacts
-            SettingsSectionTitle(title = "PERSONAL & EMERGENCY")
+            // Section 2: Personal & Safety Contacts
+            SettingsSectionTitle(title = if (isHindi) "व्यक्तिगत एवं आपातकालीन सुरक्षा" else "PERSONAL & SAFETY")
 
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, AppleBorderSubtle, RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
                 color = AppleSurfaceWhite,
-                shadowElevation = 2.dp
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, AppleBorderSubtle)
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                     val emergencyDisplay = if (userProfile.emergencyContactPhone.isNotBlank()) {
                         "${userProfile.emergencyContactDisplayName} • ${userProfile.emergencyContactPhone}"
                     } else {
-                        if (currentLanguage.contains("Hindi")) "कोई संपर्क सेट नहीं" else "No contact configured"
+                        if (isHindi) "कोई संपर्क सेट नहीं (जोड़ें)" else "No contact set (tap to add)"
                     }
                     SettingsNavigationRow(
-                        title = if (currentLanguage.contains("Hindi")) "आपातकालीन संपर्क" else "Emergency Contact",
+                        title = if (isHindi) "आपातकालीन संपर्क" else "Emergency Safety Contact",
                         value = emergencyDisplay,
                         icon = Icons.Default.ContactPhone,
-                        iconTint = Color(0xFFFF3B30),
+                        iconTint = SosRedIcon,
+                        iconBg = SosRedBg,
                         onClick = {
                             if (onEditProfileClick != null) {
                                 onEditProfileClick()
@@ -169,22 +254,24 @@ fun SettingsScreen(
                             }
                         }
                     )
-                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
+                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.8.dp)
                     SettingsNavigationRow(
                         title = strings.prefLanguageTitle,
                         value = currentLanguage,
                         icon = Icons.Default.Language,
                         iconTint = AppleBlue,
+                        iconBg = AppleBlueLight,
                         onClick = {
                             showLanguageDialog = true
                         }
                     )
-                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
+                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.8.dp)
                     SettingsNavigationRow(
-                        title = if (currentLanguage.contains("Hindi")) "लॉगिन पेज पर जाएं (डेमो)" else "Relive Login Page (Demo)",
-                        value = if (currentLanguage.contains("Hindi")) "प्रोफ़ाइल/लॉगिन बदलें" else "Re-open Login & Signup",
+                        title = if (isHindi) "शुरुआती सेटअप दोबारा देखें" else "Relive Onboarding Flow",
+                        value = if (isHindi) "भाषा व विवरण बदलें" else "Re-open language & login setup",
                         icon = Icons.Default.LockReset,
-                        iconTint = Color(0xFF007AFF),
+                        iconTint = Color(0xFFD97706),
+                        iconBg = Color(0xFFFFFBEB),
                         onClick = {
                             if (onReliveLoginClick != null) {
                                 onReliveLoginClick()
@@ -196,37 +283,38 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
             // Section 3: App Information & Support
-            SettingsSectionTitle(title = "SUPPORT & ABOUT")
+            SettingsSectionTitle(title = if (isHindi) "सहायता एवं परिचय" else "HELP & ABOUT")
 
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, AppleBorderSubtle, RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
                 color = AppleSurfaceWhite,
-                shadowElevation = 2.dp
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, AppleBorderSubtle)
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                     SettingsNavigationRow(
-                        title = "How to Use (Tutorial Video)",
-                        value = "Play quick 1-min guide",
+                        title = "How to Use (1-Min Audio Guide)",
+                        value = "Listen to quick walkthrough",
                         icon = Icons.AutoMirrored.Filled.Help,
-                        iconTint = Color(0xFFAF52DE),
+                        iconTint = Color(0xFF7C3AED),
+                        iconBg = Color(0xFFF5F3FF),
                         onClick = {
-                            Toast.makeText(context, "Tutorial video clicked", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Audio guide clicked", Toast.LENGTH_SHORT).show()
                         }
                     )
-                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
+                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.8.dp)
                     SettingsNavigationRow(
-                        title = "About ElderhelpV0.1",
+                        title = "About Sahaay Elder Care",
                         value = "V0.1.0 • Hackathon Prototype",
                         icon = Icons.Default.Info,
-                        iconTint = Color(0xFF34C759),
+                        iconTint = Color(0xFF059669),
+                        iconBg = Color(0xFFECFDF5),
                         onClick = {
-                            Toast.makeText(context, "ElderhelpV0.1 Hackathon Prototype", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Sahaay Elder Care V0.1.0 Prototype", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }
@@ -283,7 +371,7 @@ fun SettingsScreen(
                                 Text(
                                     text = language,
                                     style = Typography.bodyLarge.copy(
-                                        fontSize = 17.sp,
+                                        fontSize = 16.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         color = if (isSelected) AppleBlue else AppleTextPrimary
                                     )
@@ -315,7 +403,7 @@ fun SettingsSectionTitle(title: String) {
         style = Typography.labelMedium.copy(
             color = AppleTextMuted,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
+            letterSpacing = 0.8.sp,
             fontSize = 12.sp
         ),
         modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
@@ -327,6 +415,8 @@ fun SettingsSwitchRow(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    iconTint: Color = AppleBlue,
+    iconBg: Color = AppleBlueLight,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -339,74 +429,9 @@ fun SettingsSwitchRow(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(40.dp)
+                .size(42.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(AppleBlueLight)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = AppleBlue,
-                modifier = Modifier.size(22.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(14.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = Typography.titleMedium.copy(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AppleTextPrimary
-                )
-            )
-            Text(
-                text = subtitle,
-                style = Typography.bodyMedium.copy(
-                    fontSize = 13.sp,
-                    color = AppleTextMuted
-                )
-            )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = AppleBlue,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color(0xFFE5E5EA)
-            )
-        )
-    }
-}
-
-@Composable
-fun SettingsNavigationRow(
-    title: String,
-    value: String,
-    icon: ImageVector,
-    iconTint: Color,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(iconTint.copy(alpha = 0.12f))
+                .background(iconBg)
         ) {
             Icon(
                 imageVector = icon,
@@ -422,17 +447,86 @@ fun SettingsNavigationRow(
             Text(
                 text = title,
                 style = Typography.titleMedium.copy(
-                    fontSize = 16.sp,
+                    fontSize = 15.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = AppleTextPrimary
                 )
             )
+            Spacer(modifier = Modifier.height(1.dp))
             Text(
-                text = value,
-                style = Typography.bodyMedium.copy(
-                    fontSize = 13.sp,
+                text = subtitle,
+                style = Typography.bodySmall.copy(
+                    fontSize = 12.5.sp,
                     color = AppleTextMuted
                 )
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = AppleBlue,
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = Color(0xFFCBD5E1)
+            )
+        )
+    }
+}
+
+@Composable
+fun SettingsNavigationRow(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    iconTint: Color,
+    iconBg: Color = iconTint.copy(alpha = 0.12f),
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(42.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(iconBg)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = Typography.titleMedium.copy(
+                    fontSize = 15.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppleTextPrimary
+                )
+            )
+            Spacer(modifier = Modifier.height(1.dp))
+            Text(
+                text = value,
+                style = Typography.bodySmall.copy(
+                    fontSize = 12.5.sp,
+                    color = AppleTextMuted
+                ),
+                maxLines = 1
             )
         }
 

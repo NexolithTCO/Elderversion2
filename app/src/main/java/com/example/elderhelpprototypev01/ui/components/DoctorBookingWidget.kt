@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -196,8 +197,8 @@ fun DoctorBookingWidget(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = Color.White,
+        shape = RoundedCornerShape(22.dp),
+        color = AppleSurfaceWhite,
         shadowElevation = 3.dp,
         border = BorderStroke(1.dp, AppleBorderSubtle)
     ) {
@@ -208,97 +209,134 @@ fun DoctorBookingWidget(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Left Title & Subtitle Info Row
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(14.dp))
                             .background(DoctorBlueBg),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "👨‍⚕️", fontSize = 22.sp)
+                        Text(text = "👨‍⚕️", fontSize = 24.sp)
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Doctor Booking",
+                            text = "Doctor Appointments",
                             style = Typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = AppleTextPrimary,
-                                fontSize = 17.sp
-                            )
+                                fontSize = 16.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
+                        Spacer(modifier = Modifier.height(1.dp))
                         Text(
-                            text = if (appointment?.specialty != null) "Active Appointment" else "Book clinical & online visits",
+                            text = if (appointment?.specialty != null) "Confirmed Visit • Ready" else "Verified Specialists",
                             style = Typography.bodySmall.copy(
-                                color = if (appointment?.specialty != null) Color(0xFF34C759) else AppleTextMuted,
-                                fontSize = 13.sp,
+                                color = if (appointment?.specialty != null) Color(0xFF059669) else AppleTextMuted,
+                                fontSize = 12.sp,
                                 fontWeight = if (appointment?.specialty != null) FontWeight.SemiBold else FontWeight.Normal
-                            )
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
+                Spacer(modifier = Modifier.width(10.dp))
+
+                // Right Unbreakable CTA Button
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = AppleBlueLight
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (appointment?.specialty != null) Color(0xFFECFDF5) else AppleBlueLight,
+                    border = BorderStroke(1.dp, if (appointment?.specialty != null) Color(0xFFA7F3D0) else AppleBlueSubtle)
                 ) {
-                    Text(
-                        text = if (appointment?.specialty != null) "View Details" else "Book Now",
-                        style = Typography.labelMedium.copy(
-                            color = AppleBlue,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        ),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (appointment?.specialty != null) "Details" else "Book Now",
+                            style = Typography.labelMedium.copy(
+                                color = if (appointment?.specialty != null) Color(0xFF059669) else AppleBlue,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.5.sp
+                            ),
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            contentDescription = null,
+                            tint = if (appointment?.specialty != null) Color(0xFF059669) else AppleBlue,
+                            modifier = Modifier.size(10.dp)
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
-            HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
+            HorizontalDivider(color = AppleBorderSubtle, thickness = 0.8.dp)
             Spacer(modifier = Modifier.height(12.dp))
 
             // Details Content
             if (appointment?.specialty != null) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🩺", fontSize = 15.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = appointment.specialty ?: "General Physician",
-                            style = Typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = AppleTextPrimary,
-                                fontSize = 15.sp
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFF0FDF4),
+                        border = BorderStroke(1.dp, Color(0xFFBBF7D0)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("🩺", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = appointment.specialty ?: "General Physician",
+                                style = Typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF166534),
+                                    fontSize = 14.5.sp
+                                )
                             )
-                        )
+                        }
                     }
 
                     if (!appointment.location.isNullOrBlank()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("📍", fontSize = 15.sp)
+                            Text("📍", fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = appointment.location ?: "",
                                 style = Typography.bodyMedium.copy(
                                     color = AppleTextSecondary,
-                                    fontSize = 14.sp
-                                )
+                                    fontSize = 13.5.sp
+                                ),
+                                maxLines = 1
                             )
                         }
                     }
 
                     if (!appointment.dateTime.isNullOrBlank()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🕒", fontSize = 15.sp)
+                            Text("🕒", fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = appointment.dateTime ?: "",
                                 style = Typography.bodyMedium.copy(
                                     color = AppleBlue,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 14.sp
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.5.sp
                                 )
                             )
                         }
@@ -310,21 +348,36 @@ fun DoctorBookingWidget(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "No active booking. Tap to choose specialty & doctor visually.",
-                        style = Typography.bodyMedium.copy(
-                            color = AppleTextSecondary,
-                            fontSize = 14.sp
-                        ),
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = "Open",
-                        tint = AppleTextMuted,
-                        modifier = Modifier.size(14.dp)
-                    )
+                    ) {
+                        // Specialty Preview Avatar Group
+                        Row(horizontalArrangement = Arrangement.spacedBy((-6).dp)) {
+                            listOf("👨‍⚕️", "👩‍⚕️", "❤️", "🦴").forEach { em ->
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(AppleBlueLight)
+                                        .border(1.5.dp, Color.White, CircleShape)
+                                ) {
+                                    Text(text = em, fontSize = 13.sp)
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Find general physicians, cardiologists, orthopedics & more",
+                            style = Typography.bodySmall.copy(
+                                color = AppleTextSecondary,
+                                fontSize = 12.5.sp,
+                                lineHeight = 16.sp
+                            ),
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }

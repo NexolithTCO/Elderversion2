@@ -2,6 +2,7 @@ package com.example.elderhelpprototypev01.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -10,8 +11,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -20,9 +21,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.elderhelpprototypev01.ui.localization.Localization
@@ -38,21 +44,31 @@ fun MicrophoneButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val strings = Localization.getStrings(currentLanguage)
+    val isHindi = currentLanguage.contains("Hindi")
 
-    // Smooth pulse animation
-    val infiniteTransition = rememberInfiniteTransition(label = "pulseRing")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = if (isListening) 1.0f else 0.97f,
-        targetValue = if (isListening) 1.22f else 1.06f,
+    // Smooth rhythmic breathing animation
+    val infiniteTransition = rememberInfiniteTransition(label = "voicePulse")
+    val pulseScale1 by infiniteTransition.animateFloat(
+        initialValue = if (isListening) 1.0f else 0.98f,
+        targetValue = if (isListening) 1.25f else 1.08f,
         animationSpec = infiniteRepeatable(
-            animation = tween(if (isListening) 750 else 1800, easing = FastOutSlowInEasing),
+            animation = tween(if (isListening) 700 else 2200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "pulseScale"
+        label = "pulseScale1"
+    )
+    val pulseScale2 by infiniteTransition.animateFloat(
+        initialValue = if (isListening) 1.0f else 0.95f,
+        targetValue = if (isListening) 1.15f else 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (isListening) 700 else 2200, easing = FastOutSlowInEasing, delayMillis = 300),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale2"
     )
 
     val buttonScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else if (isListening) 1.05f else 1.0f,
+        targetValue = if (isPressed) 0.93f else if (isListening) 1.04f else 1.0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "buttonScale"
     )
@@ -63,65 +79,102 @@ fun MicrophoneButton(
         listOf(MicAppleGradientStart, MicAppleGradientEnd)
     }
 
-    val glowColor by animateColorAsState(
-        targetValue = if (isListening) MicAppleListeningStart.copy(alpha = 0.25f) else AppleBlueGlow,
+    val auraColor by animateColorAsState(
+        targetValue = if (isListening) MicListeningGlow else AppleBlueGlow,
         animationSpec = tween(400),
-        label = "glowColor"
+        label = "auraColor"
     )
 
-    // Featured Banner Container
+    // Hero Voice Companion Card
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp)),
-        shape = RoundedCornerShape(28.dp),
+            .semantics {
+                contentDescription = if (isListening) strings.listeningText else strings.tapToSpeak
+            },
+        shape = RoundedCornerShape(24.dp),
         color = AppleSurfaceWhite,
-        shadowElevation = 4.dp,
-        tonalElevation = 2.dp
+        shadowElevation = 3.dp,
+        border = BorderStroke(1.dp, AppleBorderSubtle)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 24.dp, horizontal = 20.dp),
+                .padding(vertical = 20.dp, horizontal = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Hero Voice Circular Trigger (140dp)
+            // Top Badge Pill
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (isListening) SosRedBg else AppleBlueLight,
+                border = BorderStroke(1.dp, if (isListening) SosRedBorder else AppleBlueSubtle)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (isListening) "🔴" else "✨",
+                        fontSize = 11.sp
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isListening) {
+                            if (isHindi) "सहााय सुन रहा है..." else "Sahaay is listening..."
+                        } else {
+                            if (isHindi) "सहााय वॉयस असिस्टेंट" else "Sahaay AI Voice Companion"
+                        },
+                        style = Typography.labelSmall.copy(
+                            color = if (isListening) SosRedIcon else AppleBlue,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.5.sp,
+                            letterSpacing = 0.3.sp
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Central Pulsing Microphone Trigger (180dp canvas)
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.size(190.dp)
+                modifier = Modifier.size(176.dp)
             ) {
-                // Pulsing Aura Ring
+                // Outer Aura Ring
                 Box(
                     modifier = Modifier
-                        .size(180.dp)
-                        .scale(pulseScale)
+                        .size(168.dp)
+                        .scale(pulseScale1)
                         .clip(CircleShape)
-                        .background(glowColor)
+                        .background(auraColor)
                 )
 
-                // Secondary Accent Layer
+                // Mid Soundwave Ring
                 Box(
                     modifier = Modifier
-                        .size(154.dp)
+                        .size(142.dp)
+                        .scale(pulseScale2)
                         .clip(CircleShape)
-                        .background(glowColor.copy(alpha = 0.5f))
+                        .background(auraColor.copy(alpha = 0.6f))
                 )
 
-                // Core Microphone Surface Circle (132dp)
+                // Core Tactile Mic Button
                 Surface(
                     modifier = Modifier
-                        .size(132.dp)
+                        .size(118.dp)
                         .scale(buttonScale)
                         .clip(CircleShape)
+                        .shadow(elevation = 8.dp, shape = CircleShape)
                         .clickable(
                             interactionSource = interactionSource,
                             indication = null,
+                            role = Role.Button,
                             onClick = onClick
                         ),
                     shape = CircleShape,
-                    shadowElevation = 8.dp,
-                    tonalElevation = 6.dp
+                    color = Color.Transparent
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -131,36 +184,69 @@ fun MicrophoneButton(
                     ) {
                         Icon(
                             imageVector = if (isListening) Icons.Default.GraphicEq else Icons.Default.Mic,
-                            contentDescription = "Microphone Trigger",
+                            contentDescription = "Voice Assistant Trigger",
                             tint = Color.White,
-                            modifier = Modifier.size(58.dp)
+                            modifier = Modifier.size(54.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Main Action Title: "Tap to speak" / localized
+            // Clear Action Typography
             Text(
                 text = if (isListening) strings.tapToStop else strings.tapToSpeak,
-                style = Typography.labelLarge.copy(
-                    fontSize = 24.sp,
+                style = Typography.titleLarge.copy(
+                    fontSize = 21.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AppleTextPrimary
+                    color = AppleTextPrimary,
+                    textAlign = TextAlign.Center
                 )
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = if (isListening) strings.listeningText else strings.micSubtitle,
+                text = if (isListening) {
+                    if (isHindi) "अपनी बात कहें, मैं समझ रहा हूँ..." else "Speak now, I am listening to you..."
+                } else {
+                    if (isHindi) "डॉक्टर बुक करें, बिल भरें या मदद मांगें" else "Ask to book doctors, pay bills, or get help"
+                },
                 style = Typography.bodyMedium.copy(
                     color = AppleTextMuted,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Normal
+                    fontSize = 13.5.sp,
+                    textAlign = TextAlign.Center
                 )
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Quick Prompt Hints Pill
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = AppleCanvasBg,
+                border = BorderStroke(1.dp, AppleBorderSubtle)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("💬", fontSize = 12.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isHindi)
+                            "\"डॉक्टर से मिलना है\"  •  \"बिजली का बिल भरो\""
+                        else
+                            "\"Book doctor visit\"  •  \"Pay electricity bill\"",
+                        style = Typography.bodySmall.copy(
+                            color = AppleTextSecondary,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
+            }
         }
     }
 }

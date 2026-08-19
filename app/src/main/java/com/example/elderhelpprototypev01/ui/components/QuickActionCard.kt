@@ -34,16 +34,13 @@ import androidx.compose.ui.unit.sp
 import com.example.elderhelpprototypev01.ui.theme.*
 
 /**
- * Compact Horizontal Action Card for elderly & low-literacy accessibility.
- *
- * Layout:
- * [ (Large Icon Badge)  Title & Subtitle            (Category Arrow →) ]
+ * Premium Shortcut / Quick Task Card for Elder Help.
  *
  * Features:
- * - High-contrast text & background
- * - Minimum 68dp tap target
- * - Category accent colors
- * - Spring press micro-interaction
+ * - High-contrast readable typography
+ * - Tactile spring press feedback
+ * - Visual emoji / icon tile with soft tinted background
+ * - Accessible tap target (64dp height minimum)
  */
 @Composable
 fun QuickActionCard(
@@ -79,10 +76,10 @@ fun QuickActionCard(
                 role = Role.Button,
                 onClick = onClick
             ),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         color = AppleSurfaceWhite,
         shadowElevation = 2.dp,
-        border = BorderStroke(1.2.dp, iconTint.copy(alpha = 0.22f))
+        border = BorderStroke(1.dp, AppleBorderSubtle)
     ) {
         Row(
             modifier = Modifier
@@ -91,29 +88,29 @@ fun QuickActionCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // 1. Large Visual Cue / Icon Badge
+            // 1. Visual Leading Icon Tile
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(50.dp)
+                    .size(48.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(iconBgColor)
             ) {
                 if (emoji != null) {
-                    Text(text = emoji, fontSize = 26.sp)
+                    Text(text = emoji, fontSize = 24.sp)
                 } else {
                     Icon(
                         imageVector = icon,
                         contentDescription = title,
                         tint = iconTint,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            // 2. Readable High-Contrast Title & Subtitle
+            // 2. High-Contrast Title & Subtitle
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center
@@ -121,7 +118,7 @@ fun QuickActionCard(
                 Text(
                     text = title,
                     style = Typography.titleMedium.copy(
-                        fontSize = 17.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = AppleTextPrimary
                     ),
@@ -130,8 +127,8 @@ fun QuickActionCard(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    style = Typography.bodyMedium.copy(
-                        fontSize = 13.sp,
+                    style = Typography.bodySmall.copy(
+                        fontSize = 12.5.sp,
                         color = AppleTextMuted,
                         fontWeight = FontWeight.Normal
                     ),
@@ -141,19 +138,19 @@ fun QuickActionCard(
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            // 3. Category Arrow Action Pill
+            // 3. Trailing Arrow Pill
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(34.dp)
                     .clip(CircleShape)
-                    .background(iconTint.copy(alpha = 0.12f))
+                    .background(iconTint.copy(alpha = 0.1f))
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Go",
                     tint = iconTint,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }

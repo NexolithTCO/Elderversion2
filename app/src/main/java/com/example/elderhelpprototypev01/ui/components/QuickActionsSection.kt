@@ -30,14 +30,12 @@ data class QuickActionItem(
 )
 
 /**
- * Explore Tasks section redesigned with compact horizontal row action cards:
+ * Explore Tasks & Services section:
  *
  * [ 👨‍⚕️ Book Doctor → ]
  * [ 💡 Pay Bills → ]
- * [ 📄 Government Forms → ]
+ * [ 📄 Government Forms & Pension → ]
  * [ 🚨 Emergency Assistance → ]
- *
- * Visual-first layout with high-contrast typography, large tap targets, and clear spacing.
  */
 @Composable
 fun QuickActionsSection(
@@ -99,27 +97,28 @@ fun QuickActionsSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = strings.exploreTasks,
-                style = Typography.titleLarge.copy(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AppleTextPrimary
+            Column {
+                Text(
+                    text = strings.exploreTasks,
+                    style = Typography.titleLarge.copy(
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppleTextPrimary
+                    )
                 )
-            )
-            Text(
-                text = strings.seeAll,
-                style = Typography.bodyMedium.copy(
-                    fontSize = 14.sp,
-                    color = AppleBlue,
-                    fontWeight = FontWeight.SemiBold
+                Text(
+                    text = "Quick shortcuts to all Sahaay features",
+                    style = Typography.bodySmall.copy(
+                        color = AppleTextMuted,
+                        fontSize = 12.sp
+                    )
                 )
-            )
+            }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Compact Horizontal Action Cards in a Clean Vertical Stack
+        // Clean Vertical Stack
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
