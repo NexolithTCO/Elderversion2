@@ -18,5 +18,6 @@ enum class VocalAnchorAction {
     REPEAT,
     GO_BACK,
     STOP,
-    NEXT_STEP
+    NEXT_STEP,
+    CANCEL
 }

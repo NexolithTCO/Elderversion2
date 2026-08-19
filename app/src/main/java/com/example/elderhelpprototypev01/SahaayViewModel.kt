@@ -434,7 +434,7 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
      * Step 2 — LLM Analysis: for all other input, send to Gemini and build
      *   a structured [AssistantResponse].
      */
-    private fun processTranscript(text: String) {
+    fun processTranscript(text: String) {
         // ---- Step 1: Vocal Anchor short-circuit ----
         val anchor = VocalAnchorProcessor.detect(text)
         if (anchor != null) {
@@ -495,9 +495,16 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 lastSuccessfulResponse = response
 
                 // Track and sync active doctor appointment state
-                if (com.example.elderhelpprototypev01.ai.DoctorBookingManager.isDoctorBookingIntent(text, _conversation.value)) {
+                if (response.intent == "CANCEL" || com.example.elderhelpprototypev01.ai.DoctorBookingManager.isCancellationIntent(text) || com.example.elderhelpprototypev01.ai.BillPaymentManager.isCancellationIntent(text)) {
+                    _bookedAppointment.value = null
+                    lastRecordedVoiceBookingSignature = ""
+                    lastRecordedVoicePaymentSignature = ""
+                } else if (com.example.elderhelpprototypev01.ai.DoctorBookingManager.isDoctorBookingIntent(text, _conversation.value)) {
                     val extracted = com.example.elderhelpprototypev01.ai.DoctorBookingManager.extractState(_conversation.value, text)
-                    if (extracted.specialty != null) {
+                    if (extracted.isCancelled) {
+                        _bookedAppointment.value = null
+                        lastRecordedVoiceBookingSignature = ""
+                    } else if (extracted.specialty != null) {
                         _bookedAppointment.value = extracted
                         if (extracted.isConfirmed) {
                             val docSig = "${extracted.specialty}_${extracted.location}_${extracted.dateTime}"
@@ -546,6 +553,7 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
     /**
      * Handle a detected vocal anchor locally — no LLM call needed.
      *
+     * CANCEL    → cancel active transaction, clear buffers, speak cancellation response
      * REPEAT    → replay last spoken text via TTS
      * STOP      → halt TTS, return to idle
      * GO_BACK   → emit NavigateBack navigation event
@@ -553,6 +561,38 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
      */
     private fun handleVocalAnchor(action: VocalAnchorAction) {
         when (action) {
+            VocalAnchorAction.CANCEL -> {
+                ttsManager.stop()
+                _bookedAppointment.value = null
+                lastRecordedVoiceBookingSignature = ""
+                lastRecordedVoicePaymentSignature = ""
+
+                val isHindi = _currentLanguage.value.contains("Hindi") || _currentLanguage.value.contains("हिंदी")
+                val cancelMsg = if (isHindi)
+                    "ठीक है, मैंने प्रक्रिया रद्द कर दी है। यदि आपको कुछ और चाहिए तो मुझे बताएं।"
+                else
+                    "Okay, I have cancelled the process. Let me know if you need anything else."
+
+                val anchorResponse = AssistantResponse(
+                    intent = "CANCEL",
+                    goal = "Process cancelled",
+                    response = cancelMsg,
+                    isVocalAnchor = true,
+                    vocalAnchorAction = action
+                )
+                _currentResponse.value = anchorResponse
+                _voiceState.value = VoiceState.Done
+                _engineState.value = VoiceInteractionState.Done
+                _conversation.value = _conversation.value +
+                        ConversationMessage(role = MessageRole.USER, text = "Cancel") +
+                        ConversationMessage(role = MessageRole.ASSISTANT, text = cancelMsg)
+                lastSpokenText = cancelMsg
+                lastSuccessfulResponse = anchorResponse
+                if (_ttsEnabled.value) {
+                    ttsManager.speakRaw(cancelMsg, force = true)
+                }
+            }
+
             VocalAnchorAction.REPEAT -> {
                 if (lastSpokenText.isNotBlank()) {
                     ttsManager.speakRaw(lastSpokenText, force = true)

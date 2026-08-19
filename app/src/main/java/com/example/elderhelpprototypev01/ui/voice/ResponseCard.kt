@@ -1,369 +1,199 @@
 package com.example.elderhelpprototypev01.ui.voice
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.elderhelpprototypev01.ai.DoctorBookingManager
 import com.example.elderhelpprototypev01.model.AssistantResponse
 import com.example.elderhelpprototypev01.ui.theme.*
 
 /**
  * ResponseCard
  *
- * Displays the latest Sahaay response in a structured card:
- * - Main response text
- * - Intent badge
- * - "Next step" section
- * - "💡 Helpful tip" section
- * - 🔊 Play / 🔄 Retry buttons
- * - TTS speed control
+ * Renders the assistant response strictly adhering to the Sahaay Voice Assistant specification:
+ * 1. [Assistant Spoken Text]
+ * 2. [Interactive Doctor Selection Cards - Rendered only when selecting a doctor]
+ * 3. Horizontal divider
+ * 4. Dedicated Action Controls: ONLY [ 🎙️ Speak ] and [ 🔊 Repeat Response ]
  */
 @Composable
 fun ResponseCard(
     response: AssistantResponse,
     isSpeaking: Boolean,
-    ttsEnabled: Boolean,
-    speechRate: Float,
-    onPlayClick: () -> Unit,
-    onStopClick: () -> Unit,
-    onRetryClick: () -> Unit,
-    onToggleTts: () -> Unit,
-    onSpeechRateChange: (Float) -> Unit,
+    onMicClick: () -> Unit,
+    onRepeatClick: () -> Unit,
+    onDoctorSelected: (String) -> Unit = {},
+    userLanguage: String = "English",
     modifier: Modifier = Modifier
 ) {
+    val isHindi = userLanguage.contains("Hindi") || userLanguage.contains("हिंदी")
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
-        shadowElevation = 6.dp,
+        shadowElevation = 4.dp,
         border = BorderStroke(1.dp, AppleBorderSubtle)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-
-            // ---- Header: Sahaay bot indicator ----
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(AppleBlueLight),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "🤖", fontSize = 20.sp)
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Sahaay",
-                        style = Typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = AppleTextPrimary,
-                            fontSize = 18.sp
-                        )
-                    )
-                    if (response.intent.isNotBlank() && response.intent != "GENERAL" &&
-                        response.intent != "ERROR" && response.intent != "LOADING") {
-                        IntentBadge(response.intent)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-            HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // ---- Main Response Text ----
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            // ---- 1. Assistant Spoken Text ----
             Text(
                 text = response.response,
                 style = Typography.bodyLarge.copy(
                     color = AppleTextPrimary,
                     fontSize = 18.sp,
+                    lineHeight = 26.sp,
                     fontWeight = FontWeight.Normal
                 )
             )
 
-            // ---- Clarifying Question ----
-            if (response.needsClarification && response.clarifyingQuestion != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    color = Color(0xFFFFF9E6),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text("❓", fontSize = 18.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = response.clarifyingQuestion,
-                            style = Typography.bodyLarge.copy(
-                                color = AppleTextPrimary,
-                                fontSize = 17.sp
-                            )
-                        )
-                    }
-                }
-            }
+            // ---- 2. Interactive Doctor Selection Cards (Rendered only when selecting a doctor) ----
+            val isDoctorSelection = response.intent == "BOOK_APPOINTMENT" && (
+                response.goal.contains("Select doctor", ignoreCase = true) ||
+                response.goal.contains("डॉक्टर चुनें", ignoreCase = true) ||
+                response.response.contains("available", ignoreCase = true) ||
+                response.response.contains("उपलब्ध हैं", ignoreCase = true) ||
+                response.response.contains("Which doctor would you prefer", ignoreCase = true) ||
+                response.response.contains("किसे चुनना चाहेंगे", ignoreCase = true)
+            )
 
-            // ---- Suggested Next Step ----
-            if (!response.needsClarification && response.suggestedNextStep != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    color = AppleBlueLight,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "Next step",
-                            style = Typography.labelMedium.copy(
-                                color = AppleBlue,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = response.suggestedNextStep,
-                            style = Typography.bodyLarge.copy(
-                                color = AppleTextPrimary,
-                                fontSize = 17.sp
-                            )
-                        )
-                    }
+            if (isDoctorSelection) {
+                val specialtyKey = when {
+                    response.response.contains("Cardiologist", ignoreCase = true) || response.response.contains("हृदय", ignoreCase = true) -> "Cardiologist"
+                    response.response.contains("Orthopedic", ignoreCase = true) || response.response.contains("हड्डी", ignoreCase = true) -> "Orthopedic"
+                    response.response.contains("Eye", ignoreCase = true) || response.response.contains("Ophthalmologist", ignoreCase = true) || response.response.contains("नेत्र", ignoreCase = true) -> "Ophthalmologist"
+                    response.response.contains("Neurologist", ignoreCase = true) || response.response.contains("न्यूरो", ignoreCase = true) -> "Neurologist"
+                    else -> "General Physician"
                 }
-            }
 
-            // ---- Helpful Tip ----
-            if (response.helpfulTip != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    color = Color(0xFFEAF9EC),
-                    shape = RoundedCornerShape(12.dp),
+                val specialtyEntry = DoctorBookingManager.DOCTOR_DATABASE.find { it.key.equals(specialtyKey, ignoreCase = true) }
+                    ?: DoctorBookingManager.DOCTOR_DATABASE.first()
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text("💡", fontSize = 18.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                text = "Helpful tip",
-                                style = Typography.labelMedium.copy(
-                                    color = BillsGreenIcon,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(3.dp))
-                            Text(
-                                text = response.helpfulTip,
-                                style = Typography.bodyMedium.copy(
-                                    color = AppleTextPrimary,
-                                    fontSize = 16.sp
-                                )
-                            )
+                    specialtyEntry.doctors.forEachIndexed { index, doctor ->
+                        val docName = if (isHindi) doctor.nameHi else doctor.nameEn
+                        val docQual = if (isHindi) doctor.qualificationsHi else doctor.qualificationsEn
+
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = Color(0xFFF7F9FC),
+                            border = BorderStroke(1.dp, Color(0xFFD6E4FF)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .clickable { onDoctorSelected(doctor.nameEn) }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(AppleBlue.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${index + 1}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = AppleBlue
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(14.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = docName,
+                                        style = Typography.titleMedium.copy(
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AppleTextPrimary
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = docQual,
+                                        style = Typography.bodyMedium.copy(
+                                            fontSize = 13.sp,
+                                            color = AppleTextSecondary
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // ---- Emergency Action Button (for EMERGENCY_HELP intent) ----
-            if (response.intent == "EMERGENCY_HELP") {
-                val context = androidx.compose.ui.platform.LocalContext.current
-                Spacer(modifier = Modifier.height(14.dp))
-                Button(
-                    onClick = {
-                        val digits = response.response.filter { it.isDigit() || it == '+' }
-                        val phoneToCall = if (digits.length >= 10) digits else "+919876543210"
-                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                            data = android.net.Uri.parse("tel:$phoneToCall")
-                            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            // ignore
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30)),
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PhoneInTalk,
-                        contentDescription = "Call",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Call Emergency Contact Now 📞",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color.White
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            // ---- 3. Divider ----
+            Spacer(modifier = Modifier.height(18.dp))
             HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // ---- Action Buttons Row ----
+            // ---- 4. Dedicated Action Controls: icon-only 🎙️ and 🔊 (no text labels per spec) ----
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Play/Stop TTS
-                if (ttsEnabled) {
-                    Button(
-                        onClick = if (isSpeaking) onStopClick else onPlayClick,
-                        modifier = Modifier.height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isSpeaking) Color(0xFFFF3B30) else AppleBlue
-                        )
-                    ) {
-                        Icon(
-                            imageVector = if (isSpeaking) Icons.Default.Stop else Icons.Default.VolumeUp,
-                            contentDescription = if (isSpeaking) "Stop" else "Play",
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (isSpeaking) "Stop" else "Play",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                // Retry
-                OutlinedButton(
-                    onClick = onRetryClick,
-                    modifier = Modifier.height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.5.dp, AppleBorderSubtle)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Retry",
-                        modifier = Modifier.size(18.dp),
-                        tint = AppleTextSecondary
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Retry",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppleTextSecondary
-                    )
-                }
-
-                // TTS Toggle
+                // 🎙️ icon-only mic button
                 IconButton(
-                    onClick = onToggleTts,
+                    onClick = onMicClick,
                     modifier = Modifier
-                        .height(48.dp)
-                        .width(48.dp)
+                        .size(56.dp)
                 ) {
                     Icon(
-                        imageVector = if (ttsEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                        contentDescription = "Toggle voice",
-                        tint = if (ttsEnabled) AppleBlue else AppleTextMuted,
-                        modifier = Modifier.size(24.dp)
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Speak",
+                        modifier = Modifier.size(28.dp),
+                        tint = AppleBlue
                     )
                 }
-            }
 
-            // ---- Speech Speed Slider (shown when TTS enabled) ----
-            if (ttsEnabled) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                Spacer(modifier = Modifier.width(32.dp))
+
+                // 🔊 icon-only repeat button
+                IconButton(
+                    onClick = onRepeatClick,
+                    modifier = Modifier
+                        .size(56.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.SlowMotionVideo,
-                        contentDescription = "Speed",
-                        tint = AppleTextMuted,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Slider(
-                        value = speechRate,
-                        onValueChange = onSpeechRateChange,
-                        valueRange = 0.5f..1.5f,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp),
-                        colors = SliderDefaults.colors(
-                            thumbColor = AppleBlue,
-                            activeTrackColor = AppleBlue,
-                            inactiveTrackColor = AppleBorderSubtle
-                        )
-                    )
-                    Text(
-                        text = "%.1fx".format(speechRate),
-                        style = Typography.labelMedium.copy(
-                            color = AppleTextMuted,
-                            fontSize = 12.sp
-                        ),
-                        modifier = Modifier.width(36.dp)
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = "Repeat Response",
+                        modifier = Modifier.size(28.dp),
+                        tint = AppleTextPrimary
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun IntentBadge(intent: String) {
-    val (label, color) = when (intent) {
-        "BOOK_APPOINTMENT" -> "🏥 Appointment" to Color(0xFF007AFF)
-        "PAY_BILL" -> "💳 Bill Payment" to Color(0xFF34C759)
-        "FILL_FORM" -> "📝 Form" to Color(0xFFFF9500)
-        "EXPLAIN_TERM" -> "💡 Explanation" to Color(0xFFAF52DE)
-        "EMERGENCY_HELP" -> "🆘 Emergency" to Color(0xFFFF3B30)
-        "ASK_QUESTION" -> "❓ Question" to Color(0xFF5856D6)
-        else -> return
-    }
-
-    Surface(
-        color = color.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(6.dp)
-    ) {
-        Text(
-            text = label,
-            style = Typography.labelMedium.copy(
-                color = color,
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp
-            ),
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-        )
     }
 }

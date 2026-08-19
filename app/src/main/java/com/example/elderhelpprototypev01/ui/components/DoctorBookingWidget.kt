@@ -76,7 +76,7 @@ val SPECIALTIES_CATALOG = listOf(
     SpecialtyItem(
         id = "gp",
         nameEn = "General Physician",
-        nameHi = "सामान्य चिकित्सक",
+        nameHi = "सामान्य डॉक्टर",
         emoji = "👨‍⚕️",
         subtitleEn = "Fever, cough, cold, general health",
         subtitleHi = "बुखार, सर्दी, सामान्य स्वास्थ्य",
@@ -103,7 +103,7 @@ val SPECIALTIES_CATALOG = listOf(
     SpecialtyItem(
         id = "eye",
         nameEn = "Ophthalmologist",
-        nameHi = "नेत्र विशेषज्ञ",
+        nameHi = "नेत्र रोग विशेषज्ञ",
         emoji = "👁️",
         subtitleEn = "Eye vision, glasses, cataract",
         subtitleHi = "आँखों की जांच, चश्मा, मोतियाबिंद",
@@ -112,74 +112,39 @@ val SPECIALTIES_CATALOG = listOf(
     SpecialtyItem(
         id = "neuro",
         nameEn = "Neurologist",
-        nameHi = "तंत्रिका रोग विशेषज्ञ",
+        nameHi = "न्यूरोलॉजिस्ट",
         emoji = "🧠",
         subtitleEn = "Headache, nerve care, memory",
-        subtitleHi = "सिरदर्द, नसें, याददाश्त",
+        subtitleHi = "सिरदर्द, नसें, मस्तिष्क जांच",
         color = Color(0xFFAF52DE)
-    ),
-    SpecialtyItem(
-        id = "dentist",
-        nameEn = "Dentist",
-        nameHi = "दंत चिकित्सक",
-        emoji = "🦷",
-        subtitleEn = "Teeth cleaning, toothache, gums",
-        subtitleHi = "दांत का दर्द, मसूड़े, सफाई",
-        color = Color(0xFF34C759)
-    ),
-    SpecialtyItem(
-        id = "derma",
-        nameEn = "Dermatologist",
-        nameHi = "त्वचा विशेषज्ञ",
-        emoji = "🧴",
-        subtitleEn = "Skin allergy, itching, hair fall",
-        subtitleHi = "त्वचा की एलर्जी, खुजली, बाल",
-        color = Color(0xFFFF2D55)
-    ),
-    SpecialtyItem(
-        id = "pediatric",
-        nameEn = "Pediatrician",
-        nameHi = "बाल रोग विशेषज्ञ",
-        emoji = "👶",
-        subtitleEn = "Children care & vaccination",
-        subtitleHi = "बच्चों की देखभाल व टीकाकरण",
-        color = Color(0xFF00C7BE)
     )
 )
 
 val DOCTORS_CATALOG = listOf(
-    // General Physician
-    DoctorInfo("doc_gp_1", "Dr. Sunita Rao", "gp", "MBBS, MD (Medicine)", "15 Yrs Exp", "Bandra Medical Center", "₹500", "4.9", "👩‍⚕️"),
-    DoctorInfo("doc_gp_2", "Dr. Rajesh Gupta", "gp", "MBBS", "12 Yrs Exp", "City Healthcare Clinic", "₹400", "4.8", "👨‍⚕️"),
-    DoctorInfo("doc_gp_3", "Dr. Priya Verma", "gp", "MBBS, DNB", "8 Yrs Exp", "Apex Polyclinic", "₹450", "4.7", "👩‍⚕️"),
+    // General Physician (1. Dr. Rajesh Sharma, 2. Dr. Sunita Patil, 3. Dr. Anil Verma)
+    DoctorInfo("doc_gp_1", "Dr. Rajesh Sharma", "gp", "MBBS, MD - Internal Medicine", "15 Yrs Exp", "City Medical Center", "₹500", "4.9", "👨‍⚕️"),
+    DoctorInfo("doc_gp_2", "Dr. Sunita Patil", "gp", "MBBS, Family Physician", "12 Yrs Exp", "Patil Healthcare Clinic", "₹400", "4.8", "👩‍⚕️"),
+    DoctorInfo("doc_gp_3", "Dr. Anil Verma", "gp", "MBBS, Senior Consultant", "18 Yrs Exp", "Apex Polyclinic", "₹450", "4.7", "👨‍⚕️"),
 
-    // Cardiologist
-    DoctorInfo("doc_cardio_1", "Dr. Amit Joshi", "cardio", "MD, DM (Cardiology)", "18 Yrs Exp", "Heart Care Institute", "₹800", "4.9", "👨‍⚕️"),
-    DoctorInfo("doc_cardio_2", "Dr. Neha Kapoor", "cardio", "MD Cardiology", "14 Yrs Exp", "Bandra West Hospital", "₹750", "4.8", "👩‍⚕️"),
+    // Cardiologist (1. Dr. Priya Mehta, 2. Dr. Suresh Nair, 3. Dr. Ananya Das)
+    DoctorInfo("doc_cardio_1", "Dr. Priya Mehta", "cardio", "MD, DM - Cardiology", "16 Yrs Exp", "Heart Care Institute", "₹800", "4.9", "👩‍⚕️"),
+    DoctorInfo("doc_cardio_2", "Dr. Suresh Nair", "cardio", "MBBS, MCh - Cardio", "14 Yrs Exp", "City Cardio Clinic", "₹750", "4.8", "👨‍⚕️"),
+    DoctorInfo("doc_cardio_3", "Dr. Ananya Das", "cardio", "MD, DNB - Cardiology", "11 Yrs Exp", "Care Heart Hospital", "₹700", "4.8", "👩‍⚕️"),
 
-    // Orthopedic
-    DoctorInfo("doc_ortho_1", "Dr. Vikram Malhotra", "ortho", "MS (Orthopedics)", "16 Yrs Exp", "Joint & Bone Center", "₹600", "4.9", "👨‍⚕️"),
-    DoctorInfo("doc_ortho_2", "Dr. Sanjay Mehta", "ortho", "D.Ortho, MS", "11 Yrs Exp", "Metro Spine Clinic", "₹550", "4.7", "👨‍⚕️"),
+    // Orthopedic (1. Dr. Vikram Joshi, 2. Dr. Ramesh Kulkarni, 3. Dr. Neha Gupta)
+    DoctorInfo("doc_ortho_1", "Dr. Vikram Joshi", "ortho", "MS - Orthopedics", "15 Yrs Exp", "Joint & Bone Center", "₹600", "4.9", "👨‍⚕️"),
+    DoctorInfo("doc_ortho_2", "Dr. Ramesh Kulkarni", "ortho", "MBBS, D.Ortho", "13 Yrs Exp", "Metro Ortho Clinic", "₹550", "4.7", "👨‍⚕️"),
+    DoctorInfo("doc_ortho_3", "Dr. Neha Gupta", "ortho", "MS, Joint Replacement", "10 Yrs Exp", "Gupta Bone Care", "₹650", "4.8", "👩‍⚕️"),
 
-    // Eye
-    DoctorInfo("doc_eye_1", "Dr. Anjali Deshmukh", "eye", "MS (Ophthalmology)", "12 Yrs Exp", "Netra Eye Hospital", "₹500", "4.9", "👩‍⚕️"),
-    DoctorInfo("doc_eye_2", "Dr. Rohan Nair", "eye", "DO, DNB (Eye)", "9 Yrs Exp", "Vision Care Clinic", "₹450", "4.8", "👨‍⚕️"),
+    // Ophthalmologist (1. Dr. Sanjay Rao, 2. Dr. Meera Deshmukh, 3. Dr. Amit Shah)
+    DoctorInfo("doc_eye_1", "Dr. Sanjay Rao", "eye", "MS - Ophthalmology", "14 Yrs Exp", "Netra Eye Hospital", "₹500", "4.9", "👨‍⚕️"),
+    DoctorInfo("doc_eye_2", "Dr. Meera Deshmukh", "eye", "DOMS, Eye Specialist", "12 Yrs Exp", "Vision Eye Care", "₹450", "4.8", "👩‍⚕️"),
+    DoctorInfo("doc_eye_3", "Dr. Amit Shah", "eye", "MD, Ophthalmic Surgeon", "9 Yrs Exp", "Apex Eye Center", "₹500", "4.7", "👨‍⚕️"),
 
-    // Neuro
-    DoctorInfo("doc_neuro_1", "Dr. Arvind Swamy", "neuro", "MD, DM (Neurology)", "20 Yrs Exp", "Neuro Health Care", "₹900", "5.0", "👨‍⚕️"),
-    DoctorInfo("doc_neuro_2", "Dr. Meera Nambiar", "neuro", "MD Neurology", "13 Yrs Exp", "City Brain & Nerve Clinic", "₹850", "4.8", "👩‍⚕️"),
-
-    // Dentist
-    DoctorInfo("doc_dent_1", "Dr. Pooja Agarwal", "dentist", "BDS, MDS (Dental)", "10 Yrs Exp", "Smile Dental Clinic", "₹400", "4.9", "👩‍⚕️"),
-    DoctorInfo("doc_dent_2", "Dr. Karan Shah", "dentist", "BDS (Dental Surgeon)", "7 Yrs Exp", "Bandra Dental Studio", "₹350", "4.7", "👨‍⚕️"),
-
-    // Derma
-    DoctorInfo("doc_derma_1", "Dr. Ritu Sharma", "derma", "MD (Dermatology)", "13 Yrs Exp", "Skin & Glow Clinic", "₹600", "4.9", "👩‍⚕️"),
-    DoctorInfo("doc_derma_2", "Dr. Manish Jain", "derma", "DVD, DNB (Skin)", "8 Yrs Exp", "Aesthetic Skin Center", "₹500", "4.7", "👨‍⚕️"),
-
-    // Pediatric
-    DoctorInfo("doc_ped_1", "Dr. Shalini Patil", "pediatric", "MD (Pediatrics)", "14 Yrs Exp", "Shishu Child Clinic", "₹500", "4.9", "👩‍⚕️"),
-    DoctorInfo("doc_ped_2", "Dr. Deepak Saxena", "pediatric", "DCH, MD", "11 Yrs Exp", "Little Care Hospital", "₹450", "4.8", "👨‍⚕️")
+    // Neurologist (1. Dr. Rohan Kapoor, 2. Dr. Kavita Iyer, 3. Dr. Alok Pandey)
+    DoctorInfo("doc_neuro_1", "Dr. Rohan Kapoor", "neuro", "DM - Neurology", "17 Yrs Exp", "Neuro Health Care", "₹900", "5.0", "👨‍⚕️"),
+    DoctorInfo("doc_neuro_2", "Dr. Kavita Iyer", "neuro", "MD, DNB - Neurology", "13 Yrs Exp", "City Brain & Nerve Clinic", "₹850", "4.8", "👩‍⚕️"),
+    DoctorInfo("doc_neuro_3", "Dr. Alok Pandey", "neuro", "MBBS, DM - Neuro", "11 Yrs Exp", "Pandey Neuro Center", "₹800", "4.7", "👨‍⚕️")
 )
 
 /**

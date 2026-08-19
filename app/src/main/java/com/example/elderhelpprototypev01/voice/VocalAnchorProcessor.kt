@@ -29,6 +29,30 @@ import com.example.elderhelpprototypev01.model.VocalAnchorAction
  */
 object VocalAnchorProcessor {
 
+    private val CANCEL_PATTERNS = setOf(
+        // English cancellation triggers
+        "cancel",
+        "abort",
+        "don't book",
+        "dont book",
+        "nevermind",
+        "never mind",
+        "stop payment",
+        // Hindi cancellation triggers
+        "रद्द करो",
+        "रद्द करें",
+        "बंद करो",
+        "पेमेंट रोकें",
+        "पेमेंट रोको",
+        "बुक मत करो",
+        "वापस जाओ",
+        "रहने दो",
+        "radd karo",
+        "payment roko",
+        "book mat karo",
+        "rehne do"
+    )
+
     private val REPEAT_PATTERNS = setOf(
         "repeat",
         "फिर से बोलो",
@@ -51,7 +75,6 @@ object VocalAnchorProcessor {
         "stop",
         "रुको",
         "ruko",
-        "band karo",
         "chup",
         "bas"
     )
@@ -77,6 +100,8 @@ object VocalAnchorProcessor {
         if (transcript.isBlank()) return null
         val normalized = normalize(transcript)
 
+        // Cancellation takes highest precedence for global override
+        if (CANCEL_PATTERNS.any { normalized.contains(it) }) return VocalAnchorAction.CANCEL
         if (REPEAT_PATTERNS.any { normalized.contains(it) }) return VocalAnchorAction.REPEAT
         if (GO_BACK_PATTERNS.any { normalized.contains(it) }) return VocalAnchorAction.GO_BACK
         if (STOP_PATTERNS.any { normalized.contains(it) }) return VocalAnchorAction.STOP

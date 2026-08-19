@@ -279,13 +279,16 @@ fun VoiceScreen(
                         ResponseCard(
                             response = response,
                             isSpeaking = isSpeaking,
-                            ttsEnabled = ttsEnabled,
-                            speechRate = speechRate,
-                            onPlayClick = { viewModel.speakCurrentResponse() },
-                            onStopClick = { viewModel.stopSpeaking() },
-                            onRetryClick = { viewModel.retryLastTranscript() },
-                            onToggleTts = { viewModel.toggleTts() },
-                            onSpeechRateChange = { viewModel.setSpeechRate(it) },
+                            onMicClick = {
+                                if (viewModel.hasMicPermission()) {
+                                    viewModel.startListening()
+                                } else {
+                                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                            },
+                            onRepeatClick = { viewModel.speakCurrentResponse() },
+                            onDoctorSelected = { docName -> viewModel.processTranscript(docName) },
+                            userLanguage = currentLanguage,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
