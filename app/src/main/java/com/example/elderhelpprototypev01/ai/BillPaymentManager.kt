@@ -51,32 +51,37 @@ object BillPaymentManager {
             return true
         }
 
-        // Check if previous assistant message was asking one of our bill payment questions
-        val lastAssistantMsg = conversation.lastOrNull { it.role == MessageRole.ASSISTANT }?.text?.lowercase(Locale.ROOT)
-        if (lastAssistantMsg != null) {
-            if (lastAssistantMsg.contains("which bill would you like to pay") ||
-                lastAssistantMsg.contains("consumer or account id") ||
-                lastAssistantMsg.contains("water consumer / meter number") ||
-                lastAssistantMsg.contains("water consumer") ||
-                lastAssistantMsg.contains("consumer number or lpg id") ||
-                lastAssistantMsg.contains("gas provider") ||
-                lastAssistantMsg.contains("which gas provider") ||
-                lastAssistantMsg.contains("mobile number would you like to recharge") ||
-                lastAssistantMsg.contains("service provider or operator") ||
-                lastAssistantMsg.contains("how much amount would you like to pay") ||
-                lastAssistantMsg.contains("should i proceed to payment") ||
-                lastAssistantMsg.contains("set up a payment of") ||
-                // Hindi assistant question patterns
-                lastAssistantMsg.contains("कौन सा बिल") ||
-                lastAssistantMsg.contains("उपभोक्ता आईडी") ||
-                lastAssistantMsg.contains("वाटर मीटर नंबर") ||
-                lastAssistantMsg.contains("कंज्यूमर नंबर") ||
-                lastAssistantMsg.contains("एलपीजी आईडी") ||
-                lastAssistantMsg.contains("गैस कंपनी") ||
-                lastAssistantMsg.contains("गैस प्रदाता") ||
-                lastAssistantMsg.contains("मोबाइल नंबर पर रिचार्ज") ||
-                lastAssistantMsg.contains("कंपनी का नाम") ||
-                lastAssistantMsg.contains("आगे बढ़ूं")
+        // Check if ANY recent message in the conversation relates to bill payment
+        val recentMessages = conversation.takeLast(10)
+        for (msg in recentMessages) {
+            val textLower = msg.text.lowercase(Locale.ROOT)
+            if (BILL_PAYMENT_INTENT_KEYWORDS.any { textLower.contains(it) }) {
+                return true
+            }
+            if (textLower.contains("which bill would you like to pay") ||
+                textLower.contains("consumer or account id") ||
+                textLower.contains("water consumer") ||
+                textLower.contains("gas provider") ||
+                textLower.contains("which gas provider") ||
+                textLower.contains("mobile number would you like to recharge") ||
+                textLower.contains("service provider or operator") ||
+                textLower.contains("how much amount would you like to pay") ||
+                textLower.contains("should i proceed to payment") ||
+                textLower.contains("set up a payment of") ||
+                textLower.contains("payment of ₹") ||
+                textLower.contains("processed successfully") ||
+                textLower.contains("paid successfully") ||
+                textLower.contains("कौन सा बिल") ||
+                textLower.contains("उपभोक्ता आईडी") ||
+                textLower.contains("वाटर मीटर") ||
+                textLower.contains("कंज्यूमर नंबर") ||
+                textLower.contains("एलपीजी आईडी") ||
+                textLower.contains("गैस कंपनी") ||
+                textLower.contains("गैस प्रदाता") ||
+                textLower.contains("मोबाइल नंबर पर रिचार्ज") ||
+                textLower.contains("कंपनी का नाम") ||
+                textLower.contains("आगे बढ़ूं") ||
+                textLower.contains("सफलतापूर्वक हो गया")
             ) {
                 return true
             }
@@ -87,7 +92,7 @@ object BillPaymentManager {
     /**
      * Reconstructs the current payment state by analyzing the full conversation + new transcript.
      */
-    fun extractState(conversation: List<ConversationMessage>, currentTranscript: String): PaymentFlowState {
+    fun extractState(conversation: List<ConversationMessage>, currentTranscript: String = ""): PaymentFlowState {
         val state = PaymentFlowState()
 
         var lastQuestion = ""
@@ -95,31 +100,92 @@ object BillPaymentManager {
             if (msg.role == MessageRole.USER) {
                 parseUserUtterance(msg.text, lastQuestion, state)
             } else {
-                lastQuestion = msg.text.lowercase(Locale.ROOT)
+                val assistantText = msg.text.lowercase(Locale.ROOT)
+                lastQuestion = assistantText
+                // Check if assistant already acknowledged successful processing
+                if (assistantText.contains("processed successfully") ||
+                    assistantText.contains("has been processed") ||
+                    assistantText.contains("paid successfully") ||
+                    assistantText.contains("सफलतापूर्वक हो गया") ||
+                    assistantText.contains("सफलतापूर्वक भुगतान")
+                ) {
+                    state.isConfirmed = true
+                }
+                parseAssistantText(msg.text, state)
             }
         }
 
-        // Parse current utterance in the context of the latest question
-        parseUserUtterance(currentTranscript, lastQuestion, state)
+        if (currentTranscript.isNotBlank() && conversation.lastOrNull()?.text != currentTranscript) {
+            parseUserUtterance(currentTranscript, lastQuestion, state)
+        }
+
+        // Fill default provider if missing but billType is recognized
+        if (state.provider == null && state.billType != null) {
+            state.provider = state.billType!!.defaultProvider
+        }
 
         return state
+    }
+
+    private fun parseAssistantText(text: String, state: PaymentFlowState) {
+        val lower = text.lowercase(Locale.ROOT)
+        // Extract bill type if missing
+        if (state.billType == null) {
+            when {
+                lower.contains("electricity") || lower.contains("bijli") || lower.contains("बिजली") -> state.billType = BillType.ELECTRICITY
+                lower.contains("water") || lower.contains("पानी") -> state.billType = BillType.WATER
+                lower.contains("mobile") || lower.contains("recharge") || lower.contains("मोबाइल") -> state.billType = BillType.MOBILE
+                lower.contains("gas") || lower.contains("lpg") || lower.contains("गैस") -> state.billType = BillType.GAS
+            }
+        }
+        // Extract amount if missing (e.g. ₹1450 or ₹500 or 1450)
+        if (state.amount == null) {
+            val amountRegex = Regex("(?:₹|rs\\.?|rupees|रुपये)\\s*(\\d+(?:\\.\\d{1,2})?)|(\\d+(?:\\.\\d{1,2})?)\\s*(?:₹|rs\\.?|rupees|रुपये)")
+            val match = amountRegex.find(text)
+            if (match != null) {
+                state.amount = (match.groups[1] ?: match.groups[2])?.value
+            }
+        }
+        // Extract provider if mentioned in parenthesis or text e.g. "(Adani Electricity)"
+        if (state.provider == null) {
+            when {
+                lower.contains("adani electricity") -> state.provider = "Adani Electricity"
+                lower.contains("tata power") -> state.provider = "Tata Power"
+                lower.contains("mahanagar gas") -> state.provider = "Mahanagar Gas"
+                lower.contains("hp gas") -> state.provider = "HP Gas"
+                lower.contains("bharat gas") -> state.provider = "Bharat Gas"
+                lower.contains("indane") -> state.provider = "Indane Gas"
+                lower.contains("jio") -> state.provider = "Jio Prepaid"
+                lower.contains("airtel") -> state.provider = "Airtel"
+                lower.contains("water board") -> state.provider = "Municipal Corporation Water Board"
+            }
+        }
     }
 
     private fun parseUserUtterance(text: String, lastQuestion: String, state: PaymentFlowState) {
         val lower = text.lowercase(Locale.ROOT).trim()
 
         // 1. Confirmation check
-        if (lastQuestion.contains("should i proceed to payment") || lastQuestion.contains("proceed to payment") || lastQuestion.contains("आगे बढ़ूं")) {
+        val isConfirmationQuestion = lastQuestion.contains("should i proceed to payment") ||
+                lastQuestion.contains("proceed to payment") ||
+                lastQuestion.contains("आगे बढ़ूं") ||
+                lastQuestion.contains("confirm") ||
+                lastQuestion.contains("कन्फर्म") ||
+                lastQuestion.contains("payment of")
+
+        if (isConfirmationQuestion || (state.billType != null && state.amount != null)) {
             if (lower.contains("yes") || lower.contains("proceed") || lower.contains("sure") ||
                 lower.contains("confirm") || lower.contains("ha") || lower.contains("haa") ||
                 lower.contains("haan") || lower.contains("हाँ") || lower.contains("हां") ||
                 lower.contains("yep") || lower.contains("ok") || lower.contains("okay") ||
-                lower.contains("pay") || lower.contains("correct") || lower.contains("do it")
+                lower.contains("pay") || lower.contains("correct") || lower.contains("do it") ||
+                lower.contains("karo") || lower.contains("kardo") || lower.contains("करो") ||
+                lower.contains("कर दो") || lower.contains("कर दीजिए")
             ) {
                 state.isConfirmed = true
-                return
             }
         }
+
 
         // 2. Bill Type Extraction
         if (state.billType == null) {

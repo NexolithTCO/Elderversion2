@@ -35,6 +35,8 @@ import com.example.elderhelpprototypev01.ui.theme.*
 fun SettingsScreen(
     currentLanguage: String,
     onLanguageChange: (String) -> Unit,
+    userProfile: com.example.elderhelpprototypev01.model.UserProfile = com.example.elderhelpprototypev01.model.UserProfile(),
+    onEditProfileClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -148,13 +150,22 @@ fun SettingsScreen(
                 shadowElevation = 2.dp
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    val emergencyDisplay = if (userProfile.emergencyContactPhone.isNotBlank()) {
+                        "${userProfile.emergencyContactDisplayName} • ${userProfile.emergencyContactPhone}"
+                    } else {
+                        if (currentLanguage.contains("Hindi")) "कोई संपर्क सेट नहीं" else "No contact configured"
+                    }
                     SettingsNavigationRow(
-                        title = "Emergency Contact",
-                        value = "Rahul • +91 98765 43210",
+                        title = if (currentLanguage.contains("Hindi")) "आपातकालीन संपर्क" else "Emergency Contact",
+                        value = emergencyDisplay,
                         icon = Icons.Default.ContactPhone,
                         iconTint = Color(0xFFFF3B30),
                         onClick = {
-                            Toast.makeText(context, "Emergency Contact clicked", Toast.LENGTH_SHORT).show()
+                            if (onEditProfileClick != null) {
+                                onEditProfileClick()
+                            } else {
+                                Toast.makeText(context, "Emergency Contact: $emergencyDisplay", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     )
                     HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)

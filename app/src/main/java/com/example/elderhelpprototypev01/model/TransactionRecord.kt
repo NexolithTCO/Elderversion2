@@ -48,7 +48,14 @@ data class TransactionRecord(
     val timestamp: String,
     val isVoicePayment: Boolean = false,
     val billType: BillType? = null,
-    val doctorSpecialty: String? = null
+    val doctorSpecialty: String? = null,
+    /** True for doctor appointment bookings — hides ₹ amount, shows "Appointment Booked" badge. */
+    val isAppointment: Boolean = false,
+    /** Doctor's name for appointment cards (e.g. "Dr. Amit Joshi"). */
+    val doctorName: String? = null,
+    /** Formatted date+time string for appointment cards. */
+    val appointmentDateTime: String? = null
 ) {
     val accountOrPhone: String get() = identifier
 }
+

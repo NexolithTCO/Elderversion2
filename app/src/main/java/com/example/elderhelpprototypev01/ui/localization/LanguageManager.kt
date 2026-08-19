@@ -72,8 +72,38 @@ data class AppStrings(
     val selectGasProvider: String = "Select Gas Provider",
     val gasProvider: String = "Gas Provider / Board",
     val lpgOrPipedGas: String = "LPG Cylinder / Piped Gas",
-    val voicePaymentBadge: String = "Sahaay Voice"
+    val voicePaymentBadge: String = "Sahaay Voice",
+    // ── Language Selection Screen ─────────────────────────────────────────────
+    val selectLanguageTitle: String = "Choose Your Language",
+    val selectLanguageSubtitle: String = "Select the language you are most comfortable with",
+    val languageEnglish: String = "English",
+    val languageHindi: String = "हिंदी",
+    val continueBtn: String = "Continue",
+    // ── Login / Signup Screen ─────────────────────────────────────────────────
+    val signupTitle: String = "Create Your Profile",
+    val signupSubtitle: String = "Tell us about yourself so Sahaay can help you better",
+    val createAccountBtn: String = "Start Using Sahaay",
+    val fieldFullName: String = "Full Name",
+    val fieldFullNamePlaceholder: String = "e.g. Ramesh Sharma",
+    val fieldPhone: String = "Phone Number",
+    val fieldPhonePlaceholder: String = "e.g. +91 98765 12345",
+    val fieldAddress: String = "Primary Address",
+    val fieldAddressPlaceholder: String = "e.g. Bandra West, Mumbai",
+    val emergencyContactSection: String = "Emergency Contact",
+    val fieldEmergencyName: String = "Contact Name",
+    val fieldEmergencyNamePlaceholder: String = "e.g. Rahul",
+    val fieldEmergencyRelation: String = "Relationship",
+    val fieldEmergencyRelationPlaceholder: String = "e.g. Son / Daughter / Husband",
+    val fieldEmergencyPhone: String = "Emergency Phone",
+    val fieldEmergencyPhonePlaceholder: String = "e.g. +91 98765 43210",
+    val personalInfoSection: String = "Personal Information",
+    // ── Transaction empty state ────────────────────────────────────────────────
+    val noTransactionsTitle: String = "No recent transactions yet.",
+    val noTransactionsSubtitle: String = "Completed payments and bookings will appear here.",
+    // ── Home greeting ─────────────────────────────────────────────────────────
+    val greetingPrefix: String = "Hello,",
 )
+
 
 object Localization {
     fun getStrings(language: String): AppStrings = when {
@@ -144,8 +174,34 @@ object Localization {
             selectGasProvider = "गैस प्रदाता चुनें (Select Gas Provider)",
             gasProvider = "गैस प्रदाता / बोर्ड",
             lpgOrPipedGas = "एलपीजी सिलेंडर / पाइप्ड गैस",
-            voicePaymentBadge = "सहाय वॉयस"
+            voicePaymentBadge = "सहाय वॉयस",
+            selectLanguageTitle = "अपनी भाषा चुनें",
+            selectLanguageSubtitle = "वह भाषा चुनें जो आपको सबसे अच्छी लगे",
+            languageEnglish = "English",
+            languageHindi = "हिंदी",
+            continueBtn = "आगे बढ़ें",
+            signupTitle = "अपना प्रोफ़ाइल बनाएं",
+            signupSubtitle = "सहाय आपकी बेहतर मदद कर सके, इसके लिए अपनी जानकारी दें",
+            createAccountBtn = "सहाय शुरू करें",
+            fieldFullName = "पूरा नाम",
+            fieldFullNamePlaceholder = "उदा. रमेश शर्मा",
+            fieldPhone = "फ़ोन नंबर",
+            fieldPhonePlaceholder = "उदा. +91 98765 12345",
+            fieldAddress = "मुख्य पता",
+            fieldAddressPlaceholder = "उदा. बांद्रा वेस्ट, मुंबई",
+            emergencyContactSection = "आपातकालीन संपर्क",
+            fieldEmergencyName = "संपर्क का नाम",
+            fieldEmergencyNamePlaceholder = "उदा. राहुल",
+            fieldEmergencyRelation = "रिश्ता",
+            fieldEmergencyRelationPlaceholder = "उदा. बेटा / बेटी / पति",
+            fieldEmergencyPhone = "आपातकालीन फ़ोन",
+            fieldEmergencyPhonePlaceholder = "उदा. +91 98765 43210",
+            personalInfoSection = "व्यक्तिगत जानकारी",
+            noTransactionsTitle = "अभी कोई लेन-देन नहीं।",
+            noTransactionsSubtitle = "पूर्ण भुगतान और बुकिंग यहाँ दिखेंगे।",
+            greetingPrefix = "नमस्ते,"
         )
+
         language.contains("Marathi") || language.contains("मराठी") -> AppStrings(
             appSubtitle = "तुमचा डिजिटल साथीदार",
             statusText = "मी तुमच्या मदतीसाठी येथे आहे.",

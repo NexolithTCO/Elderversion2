@@ -31,6 +31,7 @@ import com.example.elderhelpprototypev01.model.TransactionCategory
 import com.example.elderhelpprototypev01.model.TransactionRecord
 import com.example.elderhelpprototypev01.ui.components.BillPaymentModal
 import com.example.elderhelpprototypev01.ui.components.DoctorAppointmentModal
+import com.example.elderhelpprototypev01.ui.localization.Localization
 import com.example.elderhelpprototypev01.ui.theme.*
 
 /**
@@ -47,6 +48,8 @@ fun TransactionsScreen(
     val context = LocalContext.current
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
     val bookedAppointment by viewModel.bookedAppointment.collectAsStateWithLifecycle()
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
+    val strings = Localization.getStrings(currentLanguage)
 
     var selectedCategoryFilter by remember { mutableStateOf<TransactionCategory?>(null) }
 
@@ -62,9 +65,12 @@ fun TransactionsScreen(
         }
     }
 
-    // Calculate total spend
+    // Calculate total spend (excluding doctor appointments which have no bill amount)
     val totalAmount = remember(transactions) {
-        transactions.mapNotNull { it.amount.replace(",", "").toIntOrNull() }.sum()
+        transactions
+            .filter { !it.isAppointment && it.category != TransactionCategory.DOCTOR }
+            .mapNotNull { it.amount.replace(",", "").toIntOrNull() }
+            .sum()
     }
 
     Box(
@@ -81,7 +87,7 @@ fun TransactionsScreen(
             item {
                 Column {
                     Text(
-                        text = "Transactions",
+                        text = strings.navTransactions,
                         style = Typography.headlineLarge.copy(
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
@@ -90,7 +96,7 @@ fun TransactionsScreen(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Payment history and quick repeat actions",
+                        text = if (currentLanguage.contains("Hindi")) "भुगतान इतिहास और हाल ही की गतिविधियाँ" else "Payment history and recent activity",
                         style = Typography.bodyMedium.copy(
                             fontSize = 14.sp,
                             color = AppleTextMuted
@@ -117,7 +123,7 @@ fun TransactionsScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Total Paid This Month",
+                                text = if (currentLanguage.contains("Hindi")) "इस महीने कुल भुगतान" else "Total Paid This Month",
                                 style = Typography.bodySmall.copy(
                                     color = AppleTextMuted,
                                     fontSize = 13.sp,
@@ -151,7 +157,7 @@ fun TransactionsScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "${transactions.size} Completed",
+                                    text = if (currentLanguage.contains("Hindi")) "${transactions.size} पूर्ण" else "${transactions.size} Completed",
                                     style = Typography.labelMedium.copy(
                                         color = Color(0xFF2E7D32),
                                         fontWeight = FontWeight.Bold,
@@ -174,7 +180,7 @@ fun TransactionsScreen(
                         FilterChip(
                             selected = selectedCategoryFilter == null,
                             onClick = { selectedCategoryFilter = null },
-                            label = { Text("All (${transactions.size})", fontWeight = FontWeight.SemiBold) },
+                            label = { Text(if (currentLanguage.contains("Hindi")) "सभी (${transactions.size})" else "All (${transactions.size})", fontWeight = FontWeight.SemiBold) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = AppleBlue,
                                 selectedLabelColor = Color.White
@@ -184,13 +190,24 @@ fun TransactionsScreen(
                     }
                     items(TransactionCategory.values()) { category ->
                         val count = transactions.count { it.category == category }
+                        val categoryTitle = if (currentLanguage.contains("Hindi")) {
+                            when (category) {
+                                TransactionCategory.ELECTRICITY -> "बिजली"
+                                TransactionCategory.WATER -> "पानी"
+                                TransactionCategory.MOBILE -> "मोबाइल"
+                                TransactionCategory.GAS -> "गैस"
+                                TransactionCategory.DOCTOR -> "डॉक्टर"
+                            }
+                        } else {
+                            category.title
+                        }
                         FilterChip(
                             selected = selectedCategoryFilter == category,
                             onClick = {
                                 selectedCategoryFilter = if (selectedCategoryFilter == category) null else category
                             },
                             label = {
-                                Text("${category.iconEmoji} ${category.title} ($count)", fontWeight = FontWeight.SemiBold)
+                                Text("${category.iconEmoji} $categoryTitle ($count)", fontWeight = FontWeight.SemiBold)
                             },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = AppleBlue,
@@ -205,7 +222,7 @@ fun TransactionsScreen(
             // 4. Section Title
             item {
                 Text(
-                    text = "Payment History",
+                    text = if (currentLanguage.contains("Hindi")) "गतिविधि विवरण" else "Activity Records",
                     style = Typography.titleMedium.copy(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
@@ -227,19 +244,26 @@ fun TransactionsScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(32.dp),
+                                .padding(36.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("🧾", fontSize = 36.sp)
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Text("🧾", fontSize = 42.sp)
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "No Transactions Found",
-                                style = Typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
+                                text = strings.noTransactionsTitle,
+                                style = Typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppleTextPrimary,
+                                    fontSize = 17.sp
+                                )
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "No completed transactions found in this category.",
-                                style = Typography.bodySmall.copy(color = AppleTextMuted)
+                                text = strings.noTransactionsSubtitle,
+                                style = Typography.bodySmall.copy(
+                                    color = AppleTextMuted,
+                                    fontSize = 13.sp
+                                )
                             )
                         }
                     }
@@ -248,8 +272,9 @@ fun TransactionsScreen(
                 items(filteredTransactions, key = { it.id }) { txn ->
                     TransactionHistoryCard(
                         transaction = txn,
+                        currentLanguage = currentLanguage,
                         onPayAgain = {
-                            if (txn.category == TransactionCategory.DOCTOR) {
+                            if (txn.category == TransactionCategory.DOCTOR || txn.isAppointment) {
                                 repeatingDoctorTransaction = txn
                             } else {
                                 repeatingBillTransaction = txn
@@ -279,7 +304,7 @@ fun TransactionsScreen(
                 onPaymentSuccess = { payment ->
                     viewModel.recordBillPayment(payment)
                     repeatingBillTransaction = null
-                    Toast.makeText(context, "Repeat payment of ₹${payment.amount} completed!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Payment of ₹${payment.amount} completed!", Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -289,7 +314,7 @@ fun TransactionsScreen(
             val initialBookingState = DoctorBookingManager.BookingState(
                 specialty = txn.doctorSpecialty ?: "Cardiologist",
                 location = txn.provider.substringBefore("(").trim().ifBlank { "Bandra Medical Clinic" },
-                dateTime = "Tomorrow at 5:00 PM",
+                dateTime = txn.appointmentDateTime ?: "Tomorrow at 5:00 PM",
                 mode = "in-person clinic visit",
                 isConfirmed = false
             )
@@ -297,6 +322,7 @@ fun TransactionsScreen(
             DoctorAppointmentModal(
                 appointment = initialBookingState,
                 initialTab = 1,
+                currentLanguage = currentLanguage,
                 onDismiss = { repeatingDoctorTransaction = null },
                 onBookManual = { newBooking ->
                     viewModel.updateAppointment(newBooking)
@@ -312,14 +338,18 @@ fun TransactionsScreen(
 }
 
 /**
- * Individual Accessible Transaction History Card
+ * Individual Accessible Transaction / Booking History Card
  */
 @Composable
 fun TransactionHistoryCard(
     transaction: TransactionRecord,
+    currentLanguage: String = "English (India)",
     onPayAgain: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDoctorAppointment = transaction.isAppointment || transaction.category == TransactionCategory.DOCTOR
+    val isHindi = currentLanguage.contains("Hindi") || currentLanguage.contains("हिंदी")
+
     val categoryBgColor = when (transaction.category) {
         TransactionCategory.ELECTRICITY -> Color(0xFFFFF8E1)
         TransactionCategory.WATER -> Color(0xFFE1F5FE)
@@ -340,7 +370,7 @@ fun TransactionHistoryCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Top Row: Category Icon + Provider Name + Amount Paid
+            // Top Row: Category Icon + Provider Name + Amount Paid (if not doctor booking)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -352,19 +382,26 @@ fun TransactionHistoryCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(46.dp)
                             .clip(CircleShape)
                             .background(categoryBgColor),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = transaction.category.iconEmoji, fontSize = 22.sp)
+                        Text(text = transaction.category.iconEmoji, fontSize = 24.sp)
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Column {
+                        // Title: Doctor Name or Provider
+                        val displayTitle = if (isDoctorAppointment && !transaction.doctorName.isNullOrBlank()) {
+                            "${transaction.doctorName} (${transaction.provider})"
+                        } else {
+                            transaction.provider
+                        }
+
                         Text(
-                            text = transaction.provider,
+                            text = displayTitle,
                             style = Typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = AppleTextPrimary,
@@ -373,8 +410,18 @@ fun TransactionHistoryCard(
                             maxLines = 1
                         )
                         Spacer(modifier = Modifier.height(2.dp))
+
+                        // Subtitle: Specialty / Bill Type & Ref
+                        val subtitleText = if (isDoctorAppointment) {
+                            val spec = transaction.doctorSpecialty ?: "Doctor Booking"
+                            val time = transaction.appointmentDateTime ?: ""
+                            if (time.isNotBlank()) "$spec • $time" else "$spec • Ref: ${transaction.identifier}"
+                        } else {
+                            "${transaction.category.title} • Ref: ${transaction.identifier}"
+                        }
+
                         Text(
-                            text = "${transaction.category.title} • Ref: ${transaction.identifier}",
+                            text = subtitleText,
                             style = Typography.bodySmall.copy(
                                 color = AppleTextMuted,
                                 fontSize = 12.sp
@@ -384,24 +431,25 @@ fun TransactionHistoryCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Amount
-                Text(
-                    text = "₹${transaction.amount}",
-                    style = Typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = AppleTextPrimary,
-                        fontSize = 18.sp
+                // Amount (HIDDEN for Doctor Bookings)
+                if (!isDoctorAppointment && transaction.amount.isNotBlank()) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "₹${transaction.amount}",
+                        style = Typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = AppleTextPrimary,
+                            fontSize = 18.sp
+                        )
                     )
-                )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = AppleBorderSubtle.copy(alpha = 0.6f), thickness = 0.5.dp)
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Bottom Row: Date/Time + Status Badge + Voice Badge + Pay Again Button
+            // Bottom Row: Date/Time + Status Badge + Voice Badge + Re-Book / Pay Again Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -412,26 +460,34 @@ fun TransactionHistoryCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        // Status Badge with Checkmark
+                        // Status Badge
+                        val badgeBg = if (isDoctorAppointment) Color(0xFFEDE7F6) else Color(0xFFE8F5E9)
+                        val badgeText = if (isDoctorAppointment) Color(0xFF6A1B9A) else Color(0xFF2E7D32)
+                        val statusLabel = if (isDoctorAppointment) {
+                            if (isHindi) "अपॉइंटमेंट बुक हुआ" else "Appointment Booked"
+                        } else {
+                            if (isHindi) "भुगतान सफल" else transaction.status
+                        }
+
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFFE8F5E9)
+                            color = badgeBg
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.CheckCircle,
+                                    imageVector = if (isDoctorAppointment) Icons.Default.EventAvailable else Icons.Default.CheckCircle,
                                     contentDescription = "Status",
-                                    tint = Color(0xFF2E7D32),
+                                    tint = badgeText,
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = transaction.status,
+                                    text = statusLabel,
                                     style = Typography.labelSmall.copy(
-                                        color = Color(0xFF2E7D32),
+                                        color = badgeText,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp
                                     )
@@ -439,7 +495,7 @@ fun TransactionHistoryCard(
                             }
                         }
 
-                        // Voice Payment Badge
+                        // Voice Badge
                         if (transaction.isVoicePayment) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
@@ -450,7 +506,7 @@ fun TransactionHistoryCard(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "🎙️ Sahaay Voice",
+                                        text = if (isHindi) "🎙️ सहाय वॉयस" else "🎙️ Sahaay Voice",
                                         style = Typography.labelSmall.copy(
                                             color = AppleBlue,
                                             fontWeight = FontWeight.Bold,
@@ -464,7 +520,7 @@ fun TransactionHistoryCard(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Date & Time
+                    // Booking / Transaction Timestamp
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Schedule,
@@ -483,7 +539,7 @@ fun TransactionHistoryCard(
                     }
                 }
 
-                // Prominent "Pay Again" / "Repeat" Button
+                // "Pay Again" / "Re-Book" Button
                 Button(
                     onClick = onPayAgain,
                     shape = RoundedCornerShape(12.dp),
@@ -496,13 +552,17 @@ fun TransactionHistoryCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Replay,
-                        contentDescription = "Pay Again",
+                        contentDescription = null,
                         tint = AppleBlue,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (transaction.category == TransactionCategory.DOCTOR) "Re-Book" else "Pay Again",
+                        text = if (isDoctorAppointment) {
+                            if (isHindi) "फिर बुक करें" else "Re-Book"
+                        } else {
+                            if (isHindi) "पुनः भुगतान" else "Pay Again"
+                        },
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
@@ -511,3 +571,4 @@ fun TransactionHistoryCard(
         }
     }
 }
+

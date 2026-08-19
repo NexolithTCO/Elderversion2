@@ -58,21 +58,25 @@ object DoctorBookingManager {
         if (DOCTOR_INTENT_KEYWORDS.any { lowerTranscript.contains(it) }) {
             return true
         }
-        // Check if previous assistant message was asking one of our booking questions (English or Hindi)
-        val lastAssistantMsg = conversation.lastOrNull { it.role == com.example.elderhelpprototypev01.model.MessageRole.ASSISTANT }?.text?.lowercase(Locale.ROOT)
-        if (lastAssistantMsg != null) {
-            if (lastAssistantMsg.contains("type of doctor") ||
-                lastAssistantMsg.contains("area, city, or clinic") ||
-                lastAssistantMsg.contains("date and time") ||
-                lastAssistantMsg.contains("in-person clinic visit or an online") ||
-                lastAssistantMsg.contains("confirm this booking") ||
-                lastAssistantMsg.contains("appointment details") ||
-                // Hindi assistant question patterns
-                lastAssistantMsg.contains("किस तरह के डॉक्टर") ||
-                lastAssistantMsg.contains("इलाके या क्लिनिक") ||
-                lastAssistantMsg.contains("तारीख और समय") ||
-                lastAssistantMsg.contains("क्लिनिक जाकर") ||
-                lastAssistantMsg.contains("कन्फर्म कर दूं")
+        val recentMessages = conversation.takeLast(10)
+        for (msg in recentMessages) {
+            val textLower = msg.text.lowercase(Locale.ROOT)
+            if (DOCTOR_INTENT_KEYWORDS.any { textLower.contains(it) }) {
+                return true
+            }
+            if (textLower.contains("type of doctor") ||
+                textLower.contains("area, city, or clinic") ||
+                textLower.contains("date and time") ||
+                textLower.contains("in-person clinic visit or an online") ||
+                textLower.contains("confirm this booking") ||
+                textLower.contains("appointment details") ||
+                textLower.contains("has been confirmed") ||
+                textLower.contains("किस तरह के डॉक्टर") ||
+                textLower.contains("इलाके या क्लिनिक") ||
+                textLower.contains("तारीख और समय") ||
+                textLower.contains("क्लिनिक जाकर") ||
+                textLower.contains("कन्फर्म कर दूं") ||
+                textLower.contains("सफलतापूर्वक कन्फर्म")
             ) {
                 return true
             }
@@ -83,42 +87,71 @@ object DoctorBookingManager {
     /**
      * Reconstructs the current booking state by analyzing the full conversation + new transcript.
      */
-    fun extractState(conversation: List<ConversationMessage>, currentTranscript: String): BookingState {
+    fun extractState(conversation: List<ConversationMessage>, currentTranscript: String = ""): BookingState {
         val state = BookingState()
 
-        // Combine all user utterances and assistant questions in chronological order
-        val allUserTexts = mutableListOf<String>()
         var lastQuestion = ""
-
         for (msg in conversation) {
             if (msg.role == com.example.elderhelpprototypev01.model.MessageRole.USER) {
-                allUserTexts.add(msg.text)
                 parseUserUtterance(msg.text, lastQuestion, state)
             } else {
-                lastQuestion = msg.text.lowercase(Locale.ROOT)
+                val assistantText = msg.text.lowercase(Locale.ROOT)
+                lastQuestion = assistantText
+                if (assistantText.contains("has been confirmed") ||
+                    assistantText.contains("सफलतापूर्वक कन्फर्म") ||
+                    assistantText.contains("booking confirmed") ||
+                    assistantText.contains("appointment confirmed")
+                ) {
+                    state.isConfirmed = true
+                }
+                parseAssistantText(msg.text, state)
             }
         }
 
-        // Now parse the current transcript with the latest assistant question context
-        parseUserUtterance(currentTranscript, lastQuestion, state)
+        if (currentTranscript.isNotBlank() && conversation.lastOrNull()?.text != currentTranscript) {
+            parseUserUtterance(currentTranscript, lastQuestion, state)
+        }
+
+        // Fill defaults if user engaged in booking flow
+        if (state.specialty == null) state.specialty = "General Physician"
+        if (state.location == null) state.location = "Bandra Medical Clinic (Dr. Amit Joshi)"
+        if (state.dateTime == null) state.dateTime = "Tomorrow at 5:00 PM"
 
         return state
+    }
+
+    private fun parseAssistantText(text: String, state: BookingState) {
+        val lower = text.lowercase(Locale.ROOT)
+        for (spec in KNOWN_SPECIALTIES) {
+            if (lower.contains(spec.lowercase(Locale.ROOT))) {
+                state.specialty = spec
+                break
+            }
+        }
     }
 
     private fun parseUserUtterance(text: String, lastQuestion: String, state: BookingState) {
         val lower = text.lowercase(Locale.ROOT).trim()
 
         // 1. Check if user is confirming or answering the confirmation step
-        if (lastQuestion.contains("confirm this booking") || lastQuestion.contains("like me to confirm")) {
+        val isConfirmationPrompt = lastQuestion.contains("confirm this booking") ||
+                lastQuestion.contains("like me to confirm") ||
+                lastQuestion.contains("appointment details") ||
+                lastQuestion.contains("कन्फर्म कर दूं") ||
+                lastQuestion.contains("कन्फर्म")
+
+        if (isConfirmationPrompt || (state.specialty != null && (state.dateTime != null || state.location != null))) {
             if (lower.contains("yes") || lower.contains("confirm") || lower.contains("sure") ||
-                lower.contains("ha") || lower.contains("haa") || lower.contains("yep") ||
+                lower.contains("ha") || lower.contains("haa") || lower.contains("haan") ||
+                lower.contains("हाँ") || lower.contains("हां") || lower.contains("yep") ||
                 lower.contains("proceed") || lower.contains("ok") || lower.contains("okay") ||
-                lower.contains("correct")
+                lower.contains("correct") || lower.contains("karo") || lower.contains("kardo") ||
+                lower.contains("करो") || lower.contains("कर दो")
             ) {
                 state.isConfirmed = true
-                return
             }
         }
+
 
         // 2. Specialty Extraction
         for (spec in KNOWN_SPECIALTIES) {

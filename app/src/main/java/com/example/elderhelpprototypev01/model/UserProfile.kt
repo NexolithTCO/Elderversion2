@@ -52,18 +52,17 @@ data class EmergencyContact(
  * [emergencyContactName], [emergencyContactRelationship], and [emergencyContactPhone].
  */
 data class UserProfile(
-    val fullName: String = "Ramesh Sharma",
-    val age: String = "68",
-    val contactNumber: String = "+91 98765 12345",
-    val emergencyContactName: String = "Rahul",
-    val emergencyContactRelationship: String = "Son",
-    val emergencyContactPhone: String = "+91 98765 43210",
-    val address: String = "Bandra West, Mumbai",
-    val emergencyContacts: List<EmergencyContact> = listOf(
-        EmergencyContact(name = "Rahul", relationship = "Son", phone = "+91 98765 43210")
-    )
+    val fullName: String = "",
+    val age: String = "",
+    val contactNumber: String = "",
+    val emergencyContactName: String = "",
+    val emergencyContactRelationship: String = "",
+    val emergencyContactPhone: String = "",
+    val address: String = "",
+    val emergencyContacts: List<EmergencyContact> = emptyList()
 ) {
     val phone: String get() = contactNumber
+
     /**
      * Primary emergency contact accessor.
      */

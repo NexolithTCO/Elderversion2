@@ -66,8 +66,17 @@ fun SahaayHomeScreen(
         ?: remember { mutableStateOf(null) })
     val userProfile by (viewModel?.userProfile?.collectAsStateWithLifecycle()
         ?: remember { mutableStateOf(com.example.elderhelpprototypev01.model.UserProfile()) })
+    val vmLanguage by (viewModel?.currentLanguage?.collectAsStateWithLifecycle()
+        ?: remember { mutableStateOf("English (India)") })
 
-    // Sync language preference to ViewModel whenever it changes
+    // Sync currentLanguage FROM ViewModel on first composition (picks up onboarding choice)
+    LaunchedEffect(vmLanguage) {
+        if (vmLanguage != currentLanguage) {
+            currentLanguage = vmLanguage
+        }
+    }
+
+    // Sync language preference to ViewModel whenever user toggles it from the Home header
     LaunchedEffect(currentLanguage) {
         viewModel?.setLanguage(currentLanguage)
     }
@@ -136,6 +145,8 @@ fun SahaayHomeScreen(
                     // Tab Index 3: Settings Screen
                     SettingsScreen(
                         currentLanguage = currentLanguage,
+                        userProfile = userProfile,
+                        onEditProfileClick = { showProfileModal = true },
                         onLanguageChange = { newLang ->
                             currentLanguage = newLang
                         }
@@ -191,7 +202,11 @@ fun SahaayHomeScreen(
                                     Column {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
-                                                text = userProfile.fullName,
+                                                text = if (userProfile.fullName.isNotBlank()) {
+                                                    "${strings.greetingPrefix} ${userProfile.fullName}"
+                                                } else {
+                                                    strings.welcomePill
+                                                },
                                                 style = Typography.titleLarge.copy(
                                                     fontSize = 18.sp,
                                                     fontWeight = FontWeight.Bold,

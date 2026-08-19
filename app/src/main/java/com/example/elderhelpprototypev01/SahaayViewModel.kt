@@ -87,15 +87,7 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
     // App Domain State: Appointments, User Profile, Bills
     // ------------------------------------------------------------------
 
-    private val _bookedAppointment = MutableStateFlow<com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState?>(
-        com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState(
-            specialty = "Cardiologist",
-            location = "Bandra Medical Clinic",
-            dateTime = "Tomorrow at 5:00 PM",
-            mode = "in-person clinic visit",
-            isConfirmed = true
-        )
-    )
+    private val _bookedAppointment = MutableStateFlow<com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState?>(null)
     val bookedAppointment: StateFlow<com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState?> = _bookedAppointment.asStateFlow()
 
     private val _userProfile = MutableStateFlow(com.example.elderhelpprototypev01.model.UserProfile())
@@ -104,66 +96,9 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
     private val _paidBills = MutableStateFlow<List<com.example.elderhelpprototypev01.model.BillPayment>>(emptyList())
     val paidBills: StateFlow<List<com.example.elderhelpprototypev01.model.BillPayment>> = _paidBills.asStateFlow()
 
-    private val _transactions = MutableStateFlow<List<com.example.elderhelpprototypev01.model.TransactionRecord>>(
-        listOf(
-            com.example.elderhelpprototypev01.model.TransactionRecord(
-                id = "TXN-GAS-5284",
-                category = com.example.elderhelpprototypev01.model.TransactionCategory.GAS,
-                provider = "Mahanagar Gas",
-                identifier = "901238475",
-                amount = "680",
-                status = "Successful",
-                timestamp = "16 Aug 2026, 11:15 AM",
-                isVoicePayment = true,
-                billType = com.example.elderhelpprototypev01.model.BillType.GAS
-            ),
-            com.example.elderhelpprototypev01.model.TransactionRecord(
-                id = "TXN-EL-9021",
-                category = com.example.elderhelpprototypev01.model.TransactionCategory.ELECTRICITY,
-                provider = "Adani Electricity",
-                identifier = "102938475",
-                amount = "1450",
-                status = "Successful",
-                timestamp = "14 Aug 2026, 02:45 PM",
-                isVoicePayment = false,
-                billType = com.example.elderhelpprototypev01.model.BillType.ELECTRICITY
-            ),
-            com.example.elderhelpprototypev01.model.TransactionRecord(
-                id = "TXN-MB-8412",
-                category = com.example.elderhelpprototypev01.model.TransactionCategory.MOBILE,
-                provider = "Jio Prepaid",
-                identifier = "9876512345",
-                amount = "299",
-                status = "Successful",
-                timestamp = "11 Aug 2026, 07:15 PM",
-                isVoicePayment = false,
-                billType = com.example.elderhelpprototypev01.model.BillType.MOBILE
-            ),
-            com.example.elderhelpprototypev01.model.TransactionRecord(
-                id = "TXN-DOC-7730",
-                category = com.example.elderhelpprototypev01.model.TransactionCategory.DOCTOR,
-                provider = "Bandra Medical Clinic (Dr. Sharma)",
-                identifier = "DOC-BK-8821",
-                amount = "800",
-                status = "Successful",
-                timestamp = "08 Aug 2026, 10:30 AM",
-                isVoicePayment = true,
-                doctorSpecialty = "Cardiologist"
-            ),
-            com.example.elderhelpprototypev01.model.TransactionRecord(
-                id = "TXN-WT-6109",
-                category = com.example.elderhelpprototypev01.model.TransactionCategory.WATER,
-                provider = "Municipal Corporation Water Board",
-                identifier = "WB-8839201",
-                amount = "480",
-                status = "Successful",
-                timestamp = "02 Aug 2026, 11:20 AM",
-                isVoicePayment = false,
-                billType = com.example.elderhelpprototypev01.model.BillType.WATER
-            )
-        )
-    )
+    private val _transactions = MutableStateFlow<List<com.example.elderhelpprototypev01.model.TransactionRecord>>(emptyList())
     val transactions: StateFlow<List<com.example.elderhelpprototypev01.model.TransactionRecord>> = _transactions.asStateFlow()
+
 
     fun updateAppointment(
         state: com.example.elderhelpprototypev01.ai.DoctorBookingManager.BookingState,
@@ -172,20 +107,30 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
         _bookedAppointment.value = state
         if (state.isConfirmed) {
             val df = java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault())
+            // Extract clinic name and doctor name from location string e.g. "Heart Care Institute (Dr. Amit Joshi)"
+            val rawLocation = state.location ?: "Medical Clinic"
+            val clinicName = rawLocation.substringBefore("(").trim().ifBlank { rawLocation }
+            val extractedDoctor = if (rawLocation.contains("(") && rawLocation.contains(")")) {
+                rawLocation.substringAfter("(").substringBefore(")").trim()
+            } else null
             val record = com.example.elderhelpprototypev01.model.TransactionRecord(
                 id = "TXN-DOC-${System.currentTimeMillis() % 100000}",
                 category = com.example.elderhelpprototypev01.model.TransactionCategory.DOCTOR,
-                provider = "${state.location ?: "Medical Clinic"} (${state.specialty ?: "General Physician"})",
+                provider = clinicName,
                 identifier = "DOC-BK-${System.currentTimeMillis() % 10000}",
-                amount = "800",
-                status = "Successful",
+                amount = "",
+                status = "Appointment Booked",
                 timestamp = df.format(java.util.Date()),
                 isVoicePayment = isVoicePayment,
-                doctorSpecialty = state.specialty
+                doctorSpecialty = state.specialty,
+                isAppointment = true,
+                doctorName = extractedDoctor,
+                appointmentDateTime = state.dateTime
             )
             _transactions.value = listOf(record) + _transactions.value
         }
     }
+
 
     fun cancelAppointment() {
         _bookedAppointment.value = null
@@ -193,6 +138,47 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
 
     fun updateUserProfile(profile: com.example.elderhelpprototypev01.model.UserProfile) {
         _userProfile.value = profile
+        com.example.elderhelpprototypev01.overlay.SahaayPreferences.saveProfile(
+            context = getApplication(),
+            fullName = profile.fullName,
+            age = profile.age,
+            contactNumber = profile.contactNumber,
+            address = profile.address,
+            emergencyName = profile.emergencyContactName,
+            emergencyRelationship = profile.emergencyContactRelationship,
+            emergencyPhone = profile.emergencyContactPhone
+        )
+    }
+
+    /**
+     * Restores persisted language and user profile from SharedPreferences on app re-launch.
+     * Called by MainActivity when [isFirstLaunch] is false (returning user).
+     */
+    fun initFromPreferences(context: android.content.Context) {
+        val prefs = com.example.elderhelpprototypev01.overlay.SahaayPreferences
+        // Restore language
+        val savedLanguage = prefs.getLanguage(context)
+        _currentLanguage.value = savedLanguage
+        ttsManager.applyLanguage(savedLanguage)
+        // Restore user profile
+        val name = prefs.getProfileFullName(context)
+        if (name.isNotBlank()) {
+            val emergencyContact = com.example.elderhelpprototypev01.model.EmergencyContact(
+                name = prefs.getProfileEmergencyName(context),
+                relationship = prefs.getProfileEmergencyRelationship(context),
+                phone = prefs.getProfileEmergencyPhone(context)
+            )
+            _userProfile.value = com.example.elderhelpprototypev01.model.UserProfile(
+                fullName = name,
+                age = prefs.getProfileAge(context),
+                contactNumber = prefs.getProfileContactNumber(context),
+                emergencyContactName = prefs.getProfileEmergencyName(context),
+                emergencyContactRelationship = prefs.getProfileEmergencyRelationship(context),
+                emergencyContactPhone = prefs.getProfileEmergencyPhone(context),
+                address = prefs.getProfileAddress(context),
+                emergencyContacts = listOf(emergencyContact)
+            )
+        }
     }
 
     fun recordBillPayment(
@@ -259,6 +245,12 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
 
     private var speechCollectionJob: Job? = null
     private var lastTranscript: String = ""
+
+    /**
+     * Track recently recorded voice transactions/bookings to prevent duplicate entries across turns.
+     */
+    private var lastRecordedVoicePaymentSignature: String = ""
+    private var lastRecordedVoiceBookingSignature: String = ""
 
     /**
      * The full text most recently sent to TTS — used by the REPEAT vocal anchor
@@ -508,7 +500,11 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                     if (extracted.specialty != null) {
                         _bookedAppointment.value = extracted
                         if (extracted.isConfirmed) {
-                            updateAppointment(extracted, isVoicePayment = true)
+                            val docSig = "${extracted.specialty}_${extracted.location}_${extracted.dateTime}"
+                            if (docSig != lastRecordedVoiceBookingSignature) {
+                                lastRecordedVoiceBookingSignature = docSig
+                                updateAppointment(extracted, isVoicePayment = true)
+                            }
                         }
                     }
                 }
@@ -517,19 +513,23 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
                 if (com.example.elderhelpprototypev01.ai.BillPaymentManager.isBillPaymentIntent(text, _conversation.value)) {
                     val paymentState = com.example.elderhelpprototypev01.ai.BillPaymentManager.extractState(_conversation.value, text)
                     if (paymentState.isConfirmed && paymentState.billType != null && paymentState.amount != null) {
-                        val df = java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault())
-                        val userPhoneDigits = _userProfile.value.contactNumber.filter { it.isDigit() }.takeLast(10)
-                        val identifier = paymentState.accountId ?: if (userPhoneDigits.isNotBlank()) userPhoneDigits else "901238475"
-                        val payment = com.example.elderhelpprototypev01.model.BillPayment(
-                            id = "TXN-VOICE-${paymentState.billType?.name ?: "BILL"}-${System.currentTimeMillis() % 100000}",
-                            type = paymentState.billType!!,
-                            identifier = identifier,
-                            provider = paymentState.provider ?: paymentState.billType!!.defaultProvider,
-                            amount = paymentState.amount!!,
-                            status = "Paid Successfully",
-                            timestamp = df.format(java.util.Date())
-                        )
-                        recordBillPayment(payment, isVoicePayment = true)
+                        val paySig = "${paymentState.billType}_${paymentState.amount}_${paymentState.provider}_${paymentState.accountId}"
+                        if (paySig != lastRecordedVoicePaymentSignature) {
+                            lastRecordedVoicePaymentSignature = paySig
+                            val df = java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault())
+                            val userPhoneDigits = _userProfile.value.contactNumber.filter { it.isDigit() }.takeLast(10)
+                            val identifier = paymentState.accountId ?: if (userPhoneDigits.isNotBlank()) userPhoneDigits else "901238475"
+                            val payment = com.example.elderhelpprototypev01.model.BillPayment(
+                                id = "TXN-VOICE-${paymentState.billType?.name ?: "BILL"}-${System.currentTimeMillis() % 100000}",
+                                type = paymentState.billType!!,
+                                identifier = identifier,
+                                provider = paymentState.provider ?: paymentState.billType!!.defaultProvider,
+                                amount = paymentState.amount!!,
+                                status = "Paid Successfully",
+                                timestamp = df.format(java.util.Date())
+                            )
+                            recordBillPayment(payment, isVoicePayment = true)
+                        }
                     }
                 }
 
@@ -725,6 +725,8 @@ class SahaayViewModel(application: Application) : AndroidViewModel(application) 
         lastTranscript = ""
         lastSpokenText = ""
         lastSuccessfulResponse = null
+        lastRecordedVoicePaymentSignature = ""
+        lastRecordedVoiceBookingSignature = ""
         ttsManager.stop()
     }
 
