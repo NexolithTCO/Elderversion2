@@ -51,6 +51,15 @@ fun ProfileModal(
 
     val scrollState = rememberScrollState()
 
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = AppleTextPrimary,
+        unfocusedTextColor = AppleTextPrimary,
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        focusedBorderColor = AppleBlue,
+        unfocusedBorderColor = AppleBorderSubtle
+    )
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -155,8 +164,9 @@ fun ProfileModal(
                             OutlinedTextField(
                                 value = fullName,
                                 onValueChange = { fullName = it },
-                                placeholder = { Text("e.g. Ramesh Sharma") },
+                                placeholder = { Text("e.g. Ramesh Sharma", color = AppleTextMuted) },
                                 shape = RoundedCornerShape(12.dp),
+                                colors = textFieldColors,
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -169,8 +179,9 @@ fun ProfileModal(
                             OutlinedTextField(
                                 value = age,
                                 onValueChange = { age = it },
-                                placeholder = { Text("e.g. 68 years") },
+                                placeholder = { Text("e.g. 68 years", color = AppleTextMuted) },
                                 shape = RoundedCornerShape(12.dp),
+                                colors = textFieldColors,
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -183,8 +194,9 @@ fun ProfileModal(
                             OutlinedTextField(
                                 value = contactNumber,
                                 onValueChange = { contactNumber = it },
-                                placeholder = { Text("e.g. +91 98765 12345") },
+                                placeholder = { Text("e.g. +91 98765 12345", color = AppleTextMuted) },
                                 shape = RoundedCornerShape(12.dp),
+                                colors = textFieldColors,
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -197,8 +209,9 @@ fun ProfileModal(
                             OutlinedTextField(
                                 value = address,
                                 onValueChange = { address = it },
-                                placeholder = { Text("e.g. Bandra West, Mumbai") },
+                                placeholder = { Text("e.g. Bandra West, Mumbai", color = AppleTextMuted) },
                                 shape = RoundedCornerShape(12.dp),
+                                colors = textFieldColors,
                                 modifier = Modifier.fillMaxWidth(),
                                 maxLines = 2
                             )
@@ -238,8 +251,9 @@ fun ProfileModal(
                             OutlinedTextField(
                                 value = emergencyContactName,
                                 onValueChange = { emergencyContactName = it },
-                                placeholder = { Text("e.g. Rahul") },
+                                placeholder = { Text("e.g. Rahul", color = AppleTextMuted) },
                                 shape = RoundedCornerShape(12.dp),
+                                colors = textFieldColors,
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -270,8 +284,9 @@ fun ProfileModal(
                             OutlinedTextField(
                                 value = emergencyContactRelationship,
                                 onValueChange = { emergencyContactRelationship = it },
-                                placeholder = { Text("e.g. Son / Daughter / Husband / Doctor") },
+                                placeholder = { Text("e.g. Son / Daughter / Husband / Doctor", color = AppleTextMuted) },
                                 shape = RoundedCornerShape(12.dp),
+                                colors = textFieldColors,
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -284,8 +299,9 @@ fun ProfileModal(
                             OutlinedTextField(
                                 value = emergencyContactPhone,
                                 onValueChange = { emergencyContactPhone = it },
-                                placeholder = { Text("e.g. +91 98765 43210") },
+                                placeholder = { Text("e.g. +91 98765 43210", color = AppleTextMuted) },
                                 shape = RoundedCornerShape(12.dp),
+                                colors = textFieldColors,
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -302,7 +318,7 @@ fun ProfileModal(
                                 relationship = emergencyContactRelationship.trim(),
                                 phone = emergencyContactPhone.trim()
                             )
-                            val updated = UserProfile(
+                            val updatedProfile = UserProfile(
                                 fullName = fullName.trim(),
                                 age = age.trim(),
                                 contactNumber = contactNumber.trim(),
@@ -312,16 +328,17 @@ fun ProfileModal(
                                 address = address.trim(),
                                 emergencyContacts = listOf(contact)
                             )
-                            onSaveProfile(updated)
+                            onSaveProfile(updatedProfile)
                             onDismiss()
                         },
+                        enabled = fullName.isNotBlank(),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppleBlue),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
                     ) {
-                        Text("Save Profile Details", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Save Profile Settings", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             }

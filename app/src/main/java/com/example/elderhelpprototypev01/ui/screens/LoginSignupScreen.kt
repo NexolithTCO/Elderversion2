@@ -267,6 +267,14 @@ fun LoginSignupScreen(
                         )
                     },
                     shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = AppleTextPrimary,
+                        unfocusedTextColor = AppleTextPrimary,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = AppleBlue,
+                        unfocusedBorderColor = AppleBorderSubtle
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     leadingIcon = {
@@ -451,6 +459,16 @@ private fun SignupField(
             onValueChange = onValueChange,
             placeholder = { Text(placeholder, color = AppleTextMuted, fontSize = 14.sp) },
             shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = AppleTextPrimary,
+                unfocusedTextColor = AppleTextPrimary,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = AppleBlue,
+                unfocusedBorderColor = AppleBorderSubtle,
+                focusedLeadingIconColor = AppleBlue,
+                unfocusedLeadingIconColor = AppleTextMuted
+            ),
             modifier = Modifier.fillMaxWidth(),
             maxLines = maxLines,
             leadingIcon = {
