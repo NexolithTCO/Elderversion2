@@ -1,5 +1,6 @@
 package com.example.elderhelpprototypev01.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -113,7 +114,39 @@ fun LoginSignupScreen(
             // ── Personal Information ───────────────────────────────────────────
             SignupSectionCard(
                 emoji = "👤",
-                title = strings.personalInfoSection.uppercase()
+                title = strings.personalInfoSection.uppercase(),
+                action = {
+                    Surface(
+                        onClick = {
+                            fullName = "Melith"
+                            phone = "9372552738"
+                            address = "Earth"
+                            emergencyName = "6383165097"
+                            emergencyRelation = "Son"
+                            emergencyPhone = "99523672234"
+                            Toast.makeText(context, "Filled demo details into text boxes!", Toast.LENGTH_SHORT).show()
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        color = AppleBlue,
+                        shadowElevation = 2.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("⚡", fontSize = 11.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "EXD",
+                                style = Typography.labelSmall.copy(
+                                    color = Color.White,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 12.sp
+                                )
+                            )
+                        }
+                    }
+                }
             ) {
                 SignupField(
                     label = strings.fieldFullName,
@@ -343,6 +376,7 @@ private fun SignupSectionCard(
     emoji: String,
     title: String,
     accentColor: Color = AppleBlue,
+    action: @Composable (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
@@ -353,18 +387,27 @@ private fun SignupSectionCard(
         border = BorderStroke(1.dp, AppleBorderSubtle)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(emoji, fontSize = 16.sp)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = title,
-                    style = Typography.labelMedium.copy(
-                        color = accentColor,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        fontSize = 12.sp
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(emoji, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = title,
+                        style = Typography.labelMedium.copy(
+                            color = accentColor,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
+                        )
                     )
-                )
+                }
+                if (action != null) {
+                    action()
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             content()

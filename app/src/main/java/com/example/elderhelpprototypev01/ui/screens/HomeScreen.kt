@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,7 +44,8 @@ fun SahaayHomeScreen(
     modifier: Modifier = Modifier,
     overlayRefreshTick: Int = 0,
     viewModel: SahaayViewModel? = null,
-    initialTab: Int = 0
+    initialTab: Int = 0,
+    onReliveLoginClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -149,6 +151,7 @@ fun SahaayHomeScreen(
                         currentLanguage = currentLanguage,
                         userProfile = userProfile,
                         onEditProfileClick = { showProfileModal = true },
+                        onReliveLoginClick = onReliveLoginClick,
                         onLanguageChange = { newLang ->
                             currentLanguage = newLang
                         }
@@ -176,10 +179,11 @@ fun SahaayHomeScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Profile Button & Greeting
+                                // Profile Button & Greeting (weighted so right action buttons never clip off screen)
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
+                                        .weight(1f, fill = false)
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable { showProfileModal = true }
                                         .padding(4.dp)
@@ -199,9 +203,9 @@ fun SahaayHomeScreen(
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
 
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f, fill = false)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
                                                 text = if (userProfile.fullName.isNotBlank()) {
@@ -210,10 +214,12 @@ fun SahaayHomeScreen(
                                                     strings.welcomePill
                                                 },
                                                 style = Typography.titleLarge.copy(
-                                                    fontSize = 18.sp,
+                                                    fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = AppleTextPrimary
-                                                )
+                                                ),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Icon(
@@ -226,15 +232,22 @@ fun SahaayHomeScreen(
                                         Text(
                                             text = "Sahaay Voice Assistant",
                                             style = Typography.bodyMedium.copy(
-                                                fontSize = 13.sp,
+                                                fontSize = 12.sp,
                                                 color = AppleTextMuted
-                                            )
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
 
+                                Spacer(modifier = Modifier.width(4.dp))
+
                                 // Quick Action Icons + Language Toggle
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.End
+                                ) {
                                     // Language Toggle Pill: taps between English and Hindi
                                     LanguageTogglePill(
                                         currentLanguage = currentLanguage,
@@ -246,22 +259,13 @@ fun SahaayHomeScreen(
                                             }
                                         }
                                     )
-                                    IconButton(onClick = {
-                                        showSearchModal = true
-                                    }) {
+                                    IconButton(
+                                        onClick = { showSearchModal = true },
+                                        modifier = Modifier.size(38.dp)
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Default.Search,
                                             contentDescription = "Search",
-                                            tint = AppleTextPrimary,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
-                                    IconButton(onClick = {
-                                        Toast.makeText(context, "Notifications clicked", Toast.LENGTH_SHORT).show()
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Notifications,
-                                            contentDescription = "Notifications",
                                             tint = AppleTextPrimary,
                                             modifier = Modifier.size(22.dp)
                                         )

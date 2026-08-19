@@ -37,6 +37,7 @@ fun SettingsScreen(
     onLanguageChange: (String) -> Unit,
     userProfile: com.example.elderhelpprototypev01.model.UserProfile = com.example.elderhelpprototypev01.model.UserProfile(),
     onEditProfileClick: (() -> Unit)? = null,
+    onReliveLoginClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -176,6 +177,20 @@ fun SettingsScreen(
                         iconTint = AppleBlue,
                         onClick = {
                             showLanguageDialog = true
+                        }
+                    )
+                    HorizontalDivider(color = AppleBorderSubtle, thickness = 0.5.dp)
+                    SettingsNavigationRow(
+                        title = if (currentLanguage.contains("Hindi")) "लॉगिन पेज पर जाएं (डेमो)" else "Relive Login Page (Demo)",
+                        value = if (currentLanguage.contains("Hindi")) "प्रोफ़ाइल/लॉगिन बदलें" else "Re-open Login & Signup",
+                        icon = Icons.Default.LockReset,
+                        iconTint = Color(0xFF007AFF),
+                        onClick = {
+                            if (onReliveLoginClick != null) {
+                                onReliveLoginClick()
+                            } else {
+                                Toast.makeText(context, "Opening Login Page...", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     )
                 }

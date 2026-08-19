@@ -6,17 +6,29 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.elderhelpprototypev01.overlay.SahaayOverlayService
+import com.example.elderhelpprototypev01.overlay.SahaayPreferences
+import com.example.elderhelpprototypev01.ui.screens.LanguageSelectionScreen
+import com.example.elderhelpprototypev01.ui.screens.LoginSignupScreen
 import com.example.elderhelpprototypev01.ui.screens.SahaayHomeScreen
+import com.example.elderhelpprototypev01.ui.theme.AppleCanvasBg
 import com.example.elderhelpprototypev01.ui.theme.ElderHelpPrototypeV01Theme
+
+enum class OnboardingStep {
+    LANGUAGE_SELECTION,
+    LOGIN_SIGNUP,
+    COMPLETED
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -45,12 +57,66 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ElderHelpPrototypeV01Theme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    SahaayHomeScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        viewModel = sahaayViewModel,
-                        initialTab = initialTab
-                    )
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = AppleCanvasBg
+                ) {
+                    val context = LocalContext.current
+
+                    // Restore ViewModel state from saved preferences if returning user
+                    remember {
+                        if (!SahaayPreferences.isFirstLaunch(context) && SahaayPreferences.hasProfile(context)) {
+                            sahaayViewModel.initFromPreferences(context)
+                        }
+                        true
+                    }
+
+                    var onboardingStep by remember {
+                        mutableStateOf(
+                            if (SahaayPreferences.isFirstLaunch(context) || !SahaayPreferences.hasProfile(context)) {
+                                OnboardingStep.LANGUAGE_SELECTION
+                            } else {
+                                OnboardingStep.COMPLETED
+                            }
+                        )
+                    }
+
+                    var chosenLanguage by remember {
+                        mutableStateOf(SahaayPreferences.getLanguage(context))
+                    }
+
+                    when (onboardingStep) {
+                        OnboardingStep.LANGUAGE_SELECTION -> {
+                            LanguageSelectionScreen(
+                                onLanguageSelected = { lang ->
+                                    chosenLanguage = lang
+                                    sahaayViewModel.setLanguage(lang)
+                                    onboardingStep = OnboardingStep.LOGIN_SIGNUP
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        OnboardingStep.LOGIN_SIGNUP -> {
+                            LoginSignupScreen(
+                                language = chosenLanguage,
+                                onProfileSaved = { profile ->
+                                    sahaayViewModel.updateUserProfile(profile)
+                                    SahaayPreferences.markOnboardingComplete(context)
+                                    onboardingStep = OnboardingStep.COMPLETED
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        OnboardingStep.COMPLETED -> {
+                            SahaayHomeScreen(
+                                viewModel = sahaayViewModel,
+                                initialTab = initialTab,
+                                onReliveLoginClick = {
+                                    onboardingStep = OnboardingStep.LANGUAGE_SELECTION
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
