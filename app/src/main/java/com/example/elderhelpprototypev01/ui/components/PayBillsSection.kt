@@ -511,7 +511,15 @@ fun BillPaymentModal(
                                         onValueChange = { identifier = it },
                                         shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = AppleTextPrimary,
+                                            unfocusedTextColor = AppleTextPrimary,
+                                            focusedContainerColor = Color.White,
+                                            unfocusedContainerColor = Color.White,
+                                            focusedBorderColor = AppleBlue,
+                                            unfocusedBorderColor = AppleBorderSubtle
+                                        )
                                     )
 
                                     Spacer(modifier = Modifier.height(14.dp))
@@ -544,7 +552,15 @@ fun BillPaymentModal(
                                         onValueChange = { provider = it },
                                         shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = AppleTextPrimary,
+                                            unfocusedTextColor = AppleTextPrimary,
+                                            focusedContainerColor = Color.White,
+                                            unfocusedContainerColor = Color.White,
+                                            focusedBorderColor = AppleBlue,
+                                            unfocusedBorderColor = AppleBorderSubtle
+                                        )
                                     )
 
                                     Spacer(modifier = Modifier.height(14.dp))
@@ -577,7 +593,15 @@ fun BillPaymentModal(
                                         onValueChange = { amount = it },
                                         shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = AppleTextPrimary,
+                                            unfocusedTextColor = AppleTextPrimary,
+                                            focusedContainerColor = Color.White,
+                                            unfocusedContainerColor = Color.White,
+                                            focusedBorderColor = AppleBlue,
+                                            unfocusedBorderColor = AppleBorderSubtle
+                                        )
                                     )
                                 }
                             }
@@ -679,7 +703,15 @@ fun BillPaymentModal(
                                                             label = { Text("UPI ID (VPA)") },
                                                             shape = RoundedCornerShape(10.dp),
                                                             modifier = Modifier.fillMaxWidth(),
-                                                            singleLine = true
+                                                            singleLine = true,
+                                                            colors = OutlinedTextFieldDefaults.colors(
+                                                                focusedTextColor = AppleTextPrimary,
+                                                                unfocusedTextColor = AppleTextPrimary,
+                                                                focusedContainerColor = Color.White,
+                                                                unfocusedContainerColor = Color.White,
+                                                                focusedBorderColor = AppleBlue,
+                                                                unfocusedBorderColor = AppleBorderSubtle
+                                                            )
                                                         )
                                                     }
 
@@ -695,7 +727,15 @@ fun BillPaymentModal(
                                                             label = { Text("Card Number") },
                                                             shape = RoundedCornerShape(10.dp),
                                                             modifier = Modifier.fillMaxWidth(),
-                                                            singleLine = true
+                                                            singleLine = true,
+                                                            colors = OutlinedTextFieldDefaults.colors(
+                                                                focusedTextColor = AppleTextPrimary,
+                                                                unfocusedTextColor = AppleTextPrimary,
+                                                                focusedContainerColor = Color.White,
+                                                                unfocusedContainerColor = Color.White,
+                                                                focusedBorderColor = AppleBlue,
+                                                                unfocusedBorderColor = AppleBorderSubtle
+                                                            )
                                                         )
                                                         Spacer(modifier = Modifier.height(8.dp))
                                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -705,7 +745,15 @@ fun BillPaymentModal(
                                                                 label = { Text("Expiry (MM/YY)") },
                                                                 shape = RoundedCornerShape(10.dp),
                                                                 modifier = Modifier.weight(1f),
-                                                                singleLine = true
+                                                                singleLine = true,
+                                                                colors = OutlinedTextFieldDefaults.colors(
+                                                                    focusedTextColor = AppleTextPrimary,
+                                                                    unfocusedTextColor = AppleTextPrimary,
+                                                                    focusedContainerColor = Color.White,
+                                                                    unfocusedContainerColor = Color.White,
+                                                                    focusedBorderColor = AppleBlue,
+                                                                    unfocusedBorderColor = AppleBorderSubtle
+                                                                )
                                                             )
                                                             OutlinedTextField(
                                                                 value = cardCvv,
@@ -713,7 +761,15 @@ fun BillPaymentModal(
                                                                 label = { Text("CVV") },
                                                                 shape = RoundedCornerShape(10.dp),
                                                                 modifier = Modifier.weight(1f),
-                                                                singleLine = true
+                                                                singleLine = true,
+                                                                colors = OutlinedTextFieldDefaults.colors(
+                                                                    focusedTextColor = AppleTextPrimary,
+                                                                    unfocusedTextColor = AppleTextPrimary,
+                                                                    focusedContainerColor = Color.White,
+                                                                    unfocusedContainerColor = Color.White,
+                                                                    focusedBorderColor = AppleBlue,
+                                                                    unfocusedBorderColor = AppleBorderSubtle
+                                                                )
                                                             )
                                                         }
                                                     }

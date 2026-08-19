@@ -413,6 +413,10 @@ private fun FormField(
             modifier = Modifier.fillMaxWidth(),
             maxLines = maxLines,
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = AppleTextPrimary,
+                unfocusedTextColor = AppleTextPrimary,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
                 focusedBorderColor = if (isAutoFilled) Color(0xFF34C759) else AppleBlue,
                 unfocusedBorderColor = if (isAutoFilled) Color(0xFF34C759).copy(alpha = 0.5f) else AppleBorderSubtle
             )

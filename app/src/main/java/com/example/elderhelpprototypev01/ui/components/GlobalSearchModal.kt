@@ -289,6 +289,8 @@ fun GlobalSearchModal(
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = AppleTextPrimary,
+                        unfocusedTextColor = AppleTextPrimary,
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White,
                         focusedBorderColor = AppleBlue,

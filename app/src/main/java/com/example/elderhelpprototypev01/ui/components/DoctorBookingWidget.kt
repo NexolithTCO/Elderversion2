@@ -1008,7 +1008,15 @@ private fun AppointmentDetailsView(
                     onValueChange = onPatientNameChange,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = AppleTextPrimary,
+                        unfocusedTextColor = AppleTextPrimary,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = AppleBlue,
+                        unfocusedBorderColor = AppleBorderSubtle
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -1029,7 +1037,15 @@ private fun AppointmentDetailsView(
                             onValueChange = onPatientPhoneChange,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = AppleTextPrimary,
+                        unfocusedTextColor = AppleTextPrimary,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = AppleBlue,
+                        unfocusedBorderColor = AppleBorderSubtle
+                    )
                         )
                     }
 
@@ -1045,7 +1061,15 @@ private fun AppointmentDetailsView(
                             onValueChange = onPatientAgeChange,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = AppleTextPrimary,
+                        unfocusedTextColor = AppleTextPrimary,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = AppleBlue,
+                        unfocusedBorderColor = AppleBorderSubtle
+                    )
                         )
                     }
                 }
