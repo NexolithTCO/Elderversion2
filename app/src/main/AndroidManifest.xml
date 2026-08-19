@@ -4,6 +4,8 @@
 
     <!-- Internet required for Gemini API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Direct phone call for emergency assistance -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
     <!-- Microphone for speech recognition -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Location for finding nearest police station -->

@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.elderhelpprototypev01.model.UserProfile
+import com.example.elderhelpprototypev01.ui.components.EmergencyDialerModal
+import com.example.elderhelpprototypev01.ui.components.EmergencyServicesModal
 import com.example.elderhelpprototypev01.ui.localization.Localization
 import com.example.elderhelpprototypev01.ui.theme.*
 
@@ -64,6 +66,8 @@ fun SettingsScreen(
     var simpleMode by remember { mutableStateOf(false) }
 
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showEmergencyDialer by remember { mutableStateOf(false) }
+    var showEmergencyServicesModal by remember { mutableStateOf(false) }
 
     val languages = listOf(
         "English (India)",
@@ -192,7 +196,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Section 3: EMERGENCY (Subtle red accent)
-            SettingsSectionHeader(title = if (isHindi) "आपातकालीन संपर्क" else "EMERGENCY")
+            SettingsSectionHeader(title = if (isHindi) "आपातकालीन विकल्प" else "EMERGENCY & DIRECT DIAL")
 
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -201,13 +205,36 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)) {
+                    // Row 1: Emergency Number Dialer
+                    SettingsNavRow(
+                        title = if (isHindi) "आपातकालीन नंबर डायलर" else "Emergency Number Dialer",
+                        subtitle = if (isHindi) "112, 102, 14567 या कोई भी नंबर डायल करें" else "Direct dial 112, 102, 14567 or custom number",
+                        icon = Icons.Default.Dialpad,
+                        iconBg = SosRedBg,
+                        iconTint = AppEmergency,
+                        onClick = { showEmergencyDialer = true }
+                    )
+                    HorizontalDivider(color = AppBorder, thickness = 0.8.dp, modifier = Modifier.padding(start = 54.dp))
+
+                    // Row 2: Emergency Helplines (1-Tap Call)
+                    SettingsNavRow(
+                        title = if (isHindi) "त्वरित आपातकालीन सेवाएं" else "Emergency Helplines (1-Tap Call)",
+                        subtitle = if (isHindi) "पुलिस 112 • एम्बुलेंस 102 • दमकल 101" else "Police 112 • Ambulance 102 • Fire 101",
+                        icon = Icons.Default.LocalHospital,
+                        iconBg = Color(0xFFDCFCE7),
+                        iconTint = AppSuccess,
+                        onClick = { showEmergencyServicesModal = true }
+                    )
+                    HorizontalDivider(color = AppBorder, thickness = 0.8.dp, modifier = Modifier.padding(start = 54.dp))
+
+                    // Row 3: Personal Emergency Contact Setup
                     val emergencyDisplay = if (userProfile.emergencyContactPhone.isNotBlank()) {
                         "${userProfile.emergencyContactDisplayName} • ${userProfile.emergencyContactPhone}"
                     } else {
-                        if (isHindi) "कोई संपर्क सेट नहीं" else "No emergency contact set"
+                        if (isHindi) "कोई संपर्क सेट नहीं (जोड़ें)" else "No contact set (Tap to configure)"
                     }
                     SettingsNavRow(
-                        title = "Emergency Contact",
+                        title = if (isHindi) "पारिवारिक आपातकालीन संपर्क" else "Emergency Contact Setup",
                         subtitle = emergencyDisplay,
                         icon = Icons.Default.ContactPhone,
                         iconBg = SosRedBg,
@@ -359,6 +386,25 @@ fun SettingsScreen(
                 },
                 shape = RoundedCornerShape(16.dp),
                 containerColor = AppSurface
+            )
+        }
+
+        // Emergency Number Dialer Modal
+        if (showEmergencyDialer) {
+            EmergencyDialerModal(
+                userProfile = userProfile,
+                currentLanguage = currentLanguage,
+                onDismiss = { showEmergencyDialer = false }
+            )
+        }
+
+        // Emergency Helplines Modal
+        if (showEmergencyServicesModal) {
+            EmergencyServicesModal(
+                onDismiss = { showEmergencyServicesModal = false },
+                contactName = userProfile.emergencyContactDisplayName,
+                contactNumber = userProfile.emergencyContactPhone,
+                currentLanguage = currentLanguage
             )
         }
     }

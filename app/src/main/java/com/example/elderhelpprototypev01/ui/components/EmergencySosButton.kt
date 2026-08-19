@@ -296,18 +296,8 @@ fun EmergencySosModal(
 }
 
 /**
- * Triggers phone call intent to dial emergency contact
+ * Triggers direct phone call to emergency contact
  */
 private fun triggerEmergencyCall(context: Context, phoneNumber: String) {
-    try {
-        val cleanNumber = phoneNumber.replace(" ", "").replace("-", "")
-        val intent = Intent(Intent.ACTION_DIAL).apply {
-            data = Uri.parse("tel:$cleanNumber")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        context.startActivity(intent)
-        Toast.makeText(context, "Dialing Emergency Contact ($cleanNumber)...", Toast.LENGTH_LONG).show()
-    } catch (e: Exception) {
-        Toast.makeText(context, "Unable to launch dialer: ${e.message}", Toast.LENGTH_LONG).show()
-    }
+    EmergencyCallHelper.makeCall(context, phoneNumber)
 }
