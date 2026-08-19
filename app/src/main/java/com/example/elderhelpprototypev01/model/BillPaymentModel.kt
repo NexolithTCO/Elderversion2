@@ -48,6 +48,7 @@ data class BillPayment(
     val identifier: String,
     val provider: String,
     val amount: String,
+    val paymentMode: String = "UPI (Google Pay)",
     val status: String = "Paid Successfully",
     val timestamp: String
 )

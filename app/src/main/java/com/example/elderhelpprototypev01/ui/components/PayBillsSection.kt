@@ -1,8 +1,18 @@
 package com.example.elderhelpprototypev01.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -17,8 +27,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -41,7 +54,7 @@ import java.util.Locale
  * 3. 📱 Mobile Recharge
  * 4. 🔥 Gas Bill (Piped Gas / LPG Cylinder)
  *
- * All 4 cards have identical dimensions, flex weighting, padding, and visual structure.
+ * Includes a 4-Way Senior-Friendly Payment System (UPI, Cards, Net Banking, Wallets).
  */
 @Composable
 fun PayBillsSection(
@@ -62,14 +75,27 @@ fun PayBillsSection(
                     color = AppleTextPrimary
                 )
             )
-            Text(
-                text = "Instant & Safe",
-                style = Typography.bodySmall.copy(
-                    color = Color(0xFF34C759),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                )
-            )
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFFE8F5E9),
+                border = BorderStroke(1.dp, Color(0xFF34C759).copy(alpha = 0.4f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🛡️", fontSize = 11.sp)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "4-Way Safe Pay",
+                        style = Typography.bodySmall.copy(
+                            color = Color(0xFF2E7D32),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -134,13 +160,24 @@ private fun BillCategoryCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "billCardScale"
+    )
+
     Surface(
         onClick = onClick,
+        interactionSource = interactionSource,
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         shadowElevation = 2.dp,
         border = BorderStroke(1.dp, borderColor.copy(alpha = 0.4f)),
-        modifier = modifier.height(115.dp)
+        modifier = modifier
+            .scale(scale)
+            .height(115.dp)
     ) {
         Column(
             modifier = Modifier
@@ -169,7 +206,7 @@ private fun BillCategoryCard(
                     color = AppleTextPrimary,
                     fontSize = 14.sp
                 ),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 maxLines = 1
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -187,9 +224,22 @@ private fun BillCategoryCard(
 
 
 /**
+ * Payment Method item data class
+ */
+private data class PaymentMethodItem(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val badge: String,
+    val icon: ImageVector,
+    val accentColor: Color
+)
+
+/**
  * BillPaymentModal
  *
- * Mock payment/input form modal for the selected category.
+ * Full-featured billing & payment modal supporting a **4-Way Payment System**
+ * (UPI, Cards, Net Banking, Wallets) tailored for elderly accessibility.
  */
 @Composable
 fun BillPaymentModal(
@@ -209,11 +259,22 @@ fun BillPaymentModal(
         else -> billType.sampleIdentifier
     }
 
-    var identifier: String by remember(billType, initialIdentifier) { mutableStateOf(defaultId) }
-    var provider: String by remember(billType, initialProvider) { mutableStateOf(initialProvider ?: billType.defaultProvider) }
-    var amount: String by remember(billType, initialAmount) { mutableStateOf(initialAmount ?: billType.defaultAmount) }
-    var isProcessing: Boolean by remember { mutableStateOf(false) }
-    var isPaid: Boolean by remember { mutableStateOf(false) }
+    var identifier by remember(billType, initialIdentifier) { mutableStateOf(defaultId) }
+    var provider by remember(billType, initialProvider) { mutableStateOf(initialProvider ?: billType.defaultProvider) }
+    var amount by remember(billType, initialAmount) { mutableStateOf(initialAmount ?: billType.defaultAmount) }
+
+    // 4-Way Payment System State
+    var selectedPaymentMode by remember { mutableStateOf("upi") }
+    var selectedUpiApp by remember { mutableStateOf("Google Pay") }
+    var upiId by remember { mutableStateOf("9876512345@paytm") }
+    var cardNumber by remember { mutableStateOf("4532 8892 1092 4819") }
+    var cardExpiry by remember { mutableStateOf("08/28") }
+    var cardCvv by remember { mutableStateOf("782") }
+    var selectedBank by remember { mutableStateOf("State Bank of India (SBI)") }
+    var selectedWallet by remember { mutableStateOf("Paytm Wallet") }
+
+    var isProcessing by remember { mutableStateOf(false) }
+    var isPaid by remember { mutableStateOf(false) }
     var receiptPayment by remember { mutableStateOf<BillPayment?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
@@ -233,6 +294,42 @@ fun BillPaymentModal(
         BillType.MOBILE -> listOf("Jio Prepaid", "Airtel", "Vi Prepaid", "BSNL")
     }
 
+    // 4-Way Payment System Modes Definition
+    val paymentMethods = listOf(
+        PaymentMethodItem(
+            id = "upi",
+            title = "UPI Payment",
+            subtitle = "GPay, PhonePe, Paytm, BHIM",
+            badge = "Instant ⚡",
+            icon = Icons.Default.QrCodeScanner,
+            accentColor = Color(0xFF0066CC)
+        ),
+        PaymentMethodItem(
+            id = "card",
+            title = "Debit & Credit Card",
+            subtitle = "Visa, MasterCard, RuPay",
+            badge = "All Cards",
+            icon = Icons.Default.CreditCard,
+            accentColor = Color(0xFF34C759)
+        ),
+        PaymentMethodItem(
+            id = "netbanking",
+            title = "Net Banking",
+            subtitle = "SBI, HDFC, ICICI, Axis Bank",
+            badge = "All Banks",
+            icon = Icons.Default.AccountBalance,
+            accentColor = Color(0xFFFF9500)
+        ),
+        PaymentMethodItem(
+            id = "wallet",
+            title = "Wallets & Auto-Debit",
+            subtitle = "Paytm Wallet, Amazon Pay",
+            badge = "Auto Pay",
+            icon = Icons.Default.AccountBalanceWallet,
+            accentColor = Color(0xFFAF52DE)
+        )
+    )
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -240,7 +337,7 @@ fun BillPaymentModal(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 40.dp),
+                .padding(top = 36.dp),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             color = AppleCanvasBg
         ) {
@@ -256,8 +353,8 @@ fun BillPaymentModal(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(billType.iconEmoji, fontSize = 28.sp)
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(billType.iconEmoji, fontSize = 30.sp)
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = billType.title,
@@ -268,8 +365,11 @@ fun BillPaymentModal(
                                 )
                             )
                             Text(
-                                text = if (billType == BillType.GAS) "Piped Gas & LPG Cylinder" else "Secure Bill Settlement",
-                                style = Typography.bodySmall.copy(color = AppleTextMuted)
+                                text = "4-Way Secure Payment System",
+                                style = Typography.bodySmall.copy(
+                                    color = AppleBlue,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             )
                         }
                     }
@@ -290,7 +390,7 @@ fun BillPaymentModal(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Column(
                     modifier = Modifier
@@ -303,7 +403,7 @@ fun BillPaymentModal(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
                             color = Color.White,
-                            shadowElevation = 2.dp,
+                            shadowElevation = 3.dp,
                             border = BorderStroke(1.dp, Color(0xFF34C759).copy(alpha = 0.4f))
                         ) {
                             Column(
@@ -312,7 +412,7 @@ fun BillPaymentModal(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(60.dp)
+                                        .size(64.dp)
                                         .clip(CircleShape)
                                         .background(Color(0xFFE8F5E9)),
                                     contentAlignment = Alignment.Center
@@ -321,7 +421,7 @@ fun BillPaymentModal(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = "Success",
                                         tint = Color(0xFF2E7D32),
-                                        modifier = Modifier.size(36.dp)
+                                        modifier = Modifier.size(40.dp)
                                     )
                                 }
 
@@ -332,7 +432,7 @@ fun BillPaymentModal(
                                     style = Typography.titleLarge.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF2E7D32),
-                                        fontSize = 20.sp
+                                        fontSize = 22.sp
                                     )
                                 )
 
@@ -348,6 +448,7 @@ fun BillPaymentModal(
                                 ReceiptRow(label = "Transaction ID", value = receiptPayment!!.id)
                                 ReceiptRow(label = "Billed Account", value = receiptPayment!!.identifier)
                                 ReceiptRow(label = "Provider", value = receiptPayment!!.provider)
+                                ReceiptRow(label = "Payment Method", value = receiptPayment!!.paymentMode, isHighlight = true)
                                 ReceiptRow(label = "Date & Time", value = receiptPayment!!.timestamp)
                                 ReceiptRow(label = "Status", value = receiptPayment!!.status, isHighlight = true)
 
@@ -355,154 +456,471 @@ fun BillPaymentModal(
 
                                 Button(
                                     onClick = onDismiss,
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = AppleBlue),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Done", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    } else {
-                        // Payment Input Form
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color.White,
-                            shadowElevation = 2.dp,
-                            border = BorderStroke(1.dp, AppleBorderSubtle)
-                        ) {
-                            Column(modifier = Modifier.padding(20.dp)) {
-                                Text(
-                                    text = "Bill Details",
-                                    style = Typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = AppleTextPrimary
-                                    )
-                                )
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                // Identifier (Account ID / Consumer No / Phone)
-                                Text(
-                                    text = billType.fieldLabel,
-                                    style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                OutlinedTextField(
-                                    value = identifier,
-                                    onValueChange = { identifier = it },
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                // Provider
-                                Text(
-                                    text = if (billType == BillType.GAS) "Gas Provider / Board" else "Operator / Provider",
-                                    style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    items(quickProviders) { p ->
-                                        val isSelected = provider == p
-                                        FilterChip(
-                                            selected = isSelected,
-                                            onClick = { provider = p },
-                                            label = { Text(p, fontSize = 12.sp) },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = AppleBlue,
-                                                selectedLabelColor = Color.White
-                                            )
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(6.dp))
-                                OutlinedTextField(
-                                    value = provider,
-                                    onValueChange = { provider = it },
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-
-                                Spacer(modifier = Modifier.height(14.dp))
-
-                                // Amount
-                                Text(
-                                    text = "Bill Amount (₹)",
-                                    style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    items(quickAmounts) { a ->
-                                        val isSelected = amount == a
-                                        FilterChip(
-                                            selected = isSelected,
-                                            onClick = { amount = a },
-                                            label = { Text("₹$a", fontSize = 13.sp) },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = AppleBlue,
-                                                selectedLabelColor = Color.White
-                                            )
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(6.dp))
-                                OutlinedTextField(
-                                    value = amount,
-                                    onValueChange = { amount = it },
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-
-                                Spacer(modifier = Modifier.height(24.dp))
-
-                                Button(
-                                    onClick = {
-                                        isProcessing = true
-                                        coroutineScope.launch {
-                                            delay(1000L) // Mock processing
-                                            val df = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
-                                            val newPayment = BillPayment(
-                                                id = "PAY-${System.currentTimeMillis() % 100000}",
-                                                type = billType,
-                                                identifier = identifier,
-                                                provider = provider,
-                                                amount = amount,
-                                                timestamp = df.format(Date())
-                                            )
-                                            receiptPayment = newPayment
-                                            isPaid = true
-                                            isProcessing = false
-                                            onPaymentSuccess(newPayment)
-                                        }
-                                    },
-                                    enabled = !isProcessing && identifier.isNotBlank() && amount.isNotBlank(),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = AppleBlue),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(52.dp)
                                 ) {
-                                    if (isProcessing) {
-                                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                        Text("Processing Payment...", fontWeight = FontWeight.Bold)
-                                    } else {
-                                        Text("Proceed to Pay ₹$amount", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text("Done", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                }
+                            }
+                        }
+                    } else {
+                        // Billing & 4-Way Payment Form
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            // Section 1: Bill Details Form
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White,
+                                shadowElevation = 2.dp,
+                                border = BorderStroke(1.dp, AppleBorderSubtle)
+                            ) {
+                                Column(modifier = Modifier.padding(18.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Receipt,
+                                            contentDescription = null,
+                                            tint = AppleBlue,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "1. Account & Bill Details",
+                                            style = Typography.titleMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = AppleTextPrimary,
+                                                fontSize = 16.sp
+                                            )
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // Identifier
+                                    Text(
+                                        text = billType.fieldLabel,
+                                        style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    OutlinedTextField(
+                                        value = identifier,
+                                        onValueChange = { identifier = it },
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true
+                                    )
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // Provider Selection
+                                    Text(
+                                        text = if (billType == BillType.GAS) "Gas Provider / Board" else "Operator / Provider",
+                                        style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        items(quickProviders) { p ->
+                                            val isSelected = provider == p
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = { provider = p },
+                                                label = { Text(p, fontSize = 12.sp) },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = AppleBlue,
+                                                    selectedLabelColor = Color.White
+                                                )
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    OutlinedTextField(
+                                        value = provider,
+                                        onValueChange = { provider = it },
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true
+                                    )
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // Bill Amount
+                                    Text(
+                                        text = "Bill Amount (₹)",
+                                        style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        items(quickAmounts) { a ->
+                                            val isSelected = amount == a
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = { amount = a },
+                                                label = { Text("₹$a", fontSize = 13.sp) },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = AppleBlue,
+                                                    selectedLabelColor = Color.White
+                                                )
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    OutlinedTextField(
+                                        value = amount,
+                                        onValueChange = { amount = it },
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true
+                                    )
+                                }
+                            }
+
+                            // Section 2: 4-Way Payment System Selection
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White,
+                                shadowElevation = 2.dp,
+                                border = BorderStroke(1.dp, AppleBorderSubtle)
+                            ) {
+                                Column(modifier = Modifier.padding(18.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Payment,
+                                                contentDescription = null,
+                                                tint = Color(0xFF34C759),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "2. Select Payment Method",
+                                                style = Typography.titleMedium.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = AppleTextPrimary,
+                                                    fontSize = 16.sp
+                                                )
+                                            )
+                                        }
+                                        Text(
+                                            text = "4 Options",
+                                            style = Typography.bodySmall.copy(
+                                                color = Color(0xFF34C759),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp
+                                            )
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // 4 Payment Mode Cards
+                                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        paymentMethods.forEach { method ->
+                                            val isSelected = selectedPaymentMode == method.id
+                                            PaymentModeSelectorCard(
+                                                item = method,
+                                                isSelected = isSelected,
+                                                onClick = { selectedPaymentMode = method.id }
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    // Dynamic Sub-Form based on Selected Payment Method
+                                    AnimatedVisibility(
+                                        visible = true,
+                                        enter = fadeIn() + expandVertically(),
+                                        exit = fadeOut() + shrinkVertically()
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = Color(0xFFF9F9FB),
+                                            border = BorderStroke(1.dp, AppleBorderSubtle),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(modifier = Modifier.padding(14.dp)) {
+                                                when (selectedPaymentMode) {
+                                                    "upi" -> {
+                                                        Text(
+                                                            text = "Fast UPI Checkout",
+                                                            style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                            items(listOf("Google Pay", "PhonePe", "Paytm UPI", "BHIM UPI")) { app ->
+                                                                FilterChip(
+                                                                    selected = selectedUpiApp == app,
+                                                                    onClick = { selectedUpiApp = app },
+                                                                    label = { Text(app, fontSize = 12.sp) },
+                                                                    colors = FilterChipDefaults.filterChipColors(
+                                                                        selectedContainerColor = Color(0xFF0066CC),
+                                                                        selectedLabelColor = Color.White
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        OutlinedTextField(
+                                                            value = upiId,
+                                                            onValueChange = { upiId = it },
+                                                            label = { Text("UPI ID (VPA)") },
+                                                            shape = RoundedCornerShape(10.dp),
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            singleLine = true
+                                                        )
+                                                    }
+
+                                                    "card" -> {
+                                                        Text(
+                                                            text = "Card Details",
+                                                            style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        OutlinedTextField(
+                                                            value = cardNumber,
+                                                            onValueChange = { cardNumber = it },
+                                                            label = { Text("Card Number") },
+                                                            shape = RoundedCornerShape(10.dp),
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            singleLine = true
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                            OutlinedTextField(
+                                                                value = cardExpiry,
+                                                                onValueChange = { cardExpiry = it },
+                                                                label = { Text("Expiry (MM/YY)") },
+                                                                shape = RoundedCornerShape(10.dp),
+                                                                modifier = Modifier.weight(1f),
+                                                                singleLine = true
+                                                            )
+                                                            OutlinedTextField(
+                                                                value = cardCvv,
+                                                                onValueChange = { cardCvv = it },
+                                                                label = { Text("CVV") },
+                                                                shape = RoundedCornerShape(10.dp),
+                                                                modifier = Modifier.weight(1f),
+                                                                singleLine = true
+                                                            )
+                                                        }
+                                                    }
+
+                                                    "netbanking" -> {
+                                                        Text(
+                                                            text = "Select Net Banking Provider",
+                                                            style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                            items(listOf("SBI", "HDFC Bank", "ICICI Bank", "Axis Bank", "PNB", "Kotak")) { bank ->
+                                                                FilterChip(
+                                                                    selected = selectedBank.startsWith(bank),
+                                                                    onClick = { selectedBank = "$bank Net Banking" },
+                                                                    label = { Text(bank, fontSize = 12.sp) },
+                                                                    colors = FilterChipDefaults.filterChipColors(
+                                                                        selectedContainerColor = Color(0xFFFF9500),
+                                                                        selectedLabelColor = Color.White
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+
+                                                    "wallet" -> {
+                                                        Text(
+                                                            text = "Select Digital Wallet",
+                                                            style = Typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = AppleTextPrimary)
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                            items(listOf("Paytm Wallet", "Amazon Pay", "PhonePe Wallet", "Mobikwik")) { wallet ->
+                                                                FilterChip(
+                                                                    selected = selectedWallet == wallet,
+                                                                    onClick = { selectedWallet = wallet },
+                                                                    label = { Text(wallet, fontSize = 12.sp) },
+                                                                    colors = FilterChipDefaults.filterChipColors(
+                                                                        selectedContainerColor = Color(0xFFAF52DE),
+                                                                        selectedLabelColor = Color.White
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(20.dp))
+
+                                    // Action Proceed Button
+                                    val paymentModeTitle = when (selectedPaymentMode) {
+                                        "upi" -> "UPI ($selectedUpiApp)"
+                                        "card" -> "Debit/Credit Card"
+                                        "netbanking" -> selectedBank
+                                        "wallet" -> selectedWallet
+                                        else -> "UPI"
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            isProcessing = true
+                                            coroutineScope.launch {
+                                                delay(1000L) // Mock payment processing
+                                                val df = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+                                                val newPayment = BillPayment(
+                                                    id = "PAY-${System.currentTimeMillis() % 100000}",
+                                                    type = billType,
+                                                    identifier = identifier,
+                                                    provider = provider,
+                                                    amount = amount,
+                                                    paymentMode = paymentModeTitle,
+                                                    timestamp = df.format(Date())
+                                                )
+                                                receiptPayment = newPayment
+                                                isPaid = true
+                                                isProcessing = false
+                                                onPaymentSuccess(newPayment)
+                                            }
+                                        },
+                                        enabled = !isProcessing && identifier.isNotBlank() && amount.isNotBlank(),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = AppleBlue),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(54.dp)
+                                    ) {
+                                        if (isProcessing) {
+                                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Text("Processing Payment...", fontWeight = FontWeight.Bold)
+                                        } else {
+                                            Text("Pay ₹$amount via $selectedPaymentMode".uppercase(), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Modern selection card for 4-Way Payment modes
+ */
+@Composable
+private fun PaymentModeSelectorCard(
+    item: PaymentMethodItem,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "payModeScale"
+    )
+
+    Surface(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected) item.accentColor.copy(alpha = 0.08f) else Color.White,
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) item.accentColor else AppleBorderSubtle
+        ),
+        shadowElevation = if (isSelected) 2.dp else 0.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(scale)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Radio button selection indicator
+            Icon(
+                imageVector = if (isSelected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+                contentDescription = null,
+                tint = if (isSelected) item.accentColor else AppleTextMuted,
+                modifier = Modifier.size(22.dp)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Icon box
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(item.accentColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = item.title,
+                    tint = item.accentColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Title & Subtitle
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = item.title,
+                        style = Typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = AppleTextPrimary,
+                            fontSize = 15.sp
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = item.accentColor.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = item.badge,
+                            style = Typography.labelSmall.copy(
+                                color = item.accentColor,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = item.subtitle,
+                    style = Typography.bodySmall.copy(
+                        color = AppleTextMuted,
+                        fontSize = 12.sp
+                    )
+                )
             }
         }
     }
